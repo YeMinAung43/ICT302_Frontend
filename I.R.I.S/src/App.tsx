@@ -13,6 +13,7 @@ import IncidentChoicePage from './pages/IncidentChoicePage';
 import CorrectFeedbackPage from './pages/CorrectFeedbackPage';
 import IncorrectFeedpage from './pages/IncorrectFeedpage';
 import MaybeFeedbackPage from './pages/MaybeFeedbackPage';
+import MissionCompletePage from './pages/MissionCompletePage';
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Route path="/CorrectFeedbackPage/:id/:step" element={<CorrectFeedbackPage />} />
           <Route path="/IncorrectFeedpage/:id/:step" element={<IncorrectFeedpage />} />
           <Route path="/MaybeFeedbackPage/:id/:step" element={<MaybeFeedbackPage />} />
+          <Route path="/MissionCompletePage/:id" element={<MissionCompletePage />} />
           </Routes>
       </BrowserRouter>
     </>

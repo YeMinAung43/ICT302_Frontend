@@ -17,7 +17,7 @@ const CorrectFeedbackPage = () => {
   const handleNext = () => {
     if (isLastQuestion) {
       // If it's the last question, go back to the selection screen (or a final score screen!)
-      navigate('/ScenarioSelectionPage');
+      navigate('/MissionCompletePage/${id}`');
     } else {
       // If there are more questions, go to the NEXT step (currentStepIndex + 1)
       navigate(`/IncidentChoicePage/${id}/${currentStepIndex + 1}`);
@@ -96,6 +96,7 @@ const CorrectFeedbackPage = () => {
       {isLastQuestion ? "Complete Scenario" : "Next Question"}
       <span className="material-symbols-outlined">
         {isLastQuestion ? "done_all" : "arrow_forward"}
+        Next Question
       </span>
     </button>
           </div>
