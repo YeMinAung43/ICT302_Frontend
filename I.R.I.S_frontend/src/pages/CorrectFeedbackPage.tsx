@@ -69,10 +69,6 @@ const CorrectFeedbackPage = () => {
               <div className="flex items-baseline gap-2">
                 <span className="text-green-500 text-6xl font-bold glow-success">+10 XP</span>
               </div>
-              <div className="flex items-center gap-2 mt-2 px-3 py-1 bg-green-500/20 rounded-full">
-                <span className="material-symbols-outlined text-green-500 text-sm font-bold">trending_up</span>
-                <p className="text-green-500 text-sm font-bold uppercase">Streak Bonus: +2 XP</p>
-              </div>
             </div>
           </div>
 
@@ -91,28 +87,23 @@ const CorrectFeedbackPage = () => {
           </div>
 
           {/* Actions */}
-          <div className="w-full flex flex-col gap-3">
-          <button onClick={handleNext} className="...">
-      {isLastQuestion ? "Complete Scenario" : "Next Question"}
-      <span className="material-symbols-outlined">
-        {isLastQuestion ? "done_all" : "arrow_forward"}
-        Next Question
-      </span>
-    </button>
-          </div>
+<div className="w-full flex flex-col gap-3">
+  <button 
+    onClick={handleNext} 
+    className="w-full h-14 bg-[#1337ec] hover:bg-blue-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+  >
+    {/* Text logic outside the span */}
+    <span>{isLastQuestion ? "COMPLETE SCENARIO" : "NEXT QUESTION"}</span>
+    
+    {/* Icon logic inside the span */}
+    <span className="material-symbols-outlined">
+      {isLastQuestion ? "done_all" : "arrow_forward"}
+    </span>
+  </button>
+</div>
         </main>
 
-        {/* Footer Stats */}
-        <footer className="mt-auto p-6 flex justify-center gap-8 border-t border-slate-200 dark:border-blue-600/10">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-orange-500">local_fire_department</span>
-            <span className="text-sm font-bold dark:text-white">5 Day Streak</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#1337ec]">military_tech</span>
-            <span className="text-sm font-bold dark:text-white">Top 5% Today</span>
-          </div>
-        </footer>
+        
       </div>
     </div>
   );

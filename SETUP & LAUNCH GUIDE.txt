@@ -1,0 +1,61 @@
+CYBERQUEST: SETUP & LAUNCH GUIDE
+Welcome to the CyberQuest Simulation. Please follow these steps in order to get the project running on your computer.
+
+STEP 1: INSTALL THE TOOLS
+You need these three programs installed for the game to work. Download and install them using the default settings.
+
+PYTHON (The Game Logic)
+
+Download: https://www.python.org/downloads/
+
+IMPORTANT: When the installer starts, check the box "Add Python to PATH" before clicking Install.
+
+NODE.JS (The Web Server)
+
+Download: https://nodejs.org/ (Choose the "LTS" version)
+
+VS CODE (The Window to the Code)
+
+Download: https://code.visualstudio.com/
+
+STEP 2: OPEN THE PROJECT
+Locate your "CyberQuest" folder.
+
+Right-click the folder and select "Open with Code".
+
+If a window pops up asking "Do you trust the authors?", click "Yes".
+
+STEP 3: START THE BACKEND (THE BRAIN)
+We need to start the hidden server that handles your answers first.
+
+In VS Code, go to the top menu: Terminal > New Terminal.
+
+In the black box at the bottom, type this and press Enter:
+pip install fastapi uvicorn
+
+Once finished, type this and press Enter:
+python main.py
+
+DO NOT CLOSE THIS TAB. It must stay running.
+
+STEP 4: START THE FRONTEND (THE GAME)
+Now we start the visual part of the game.
+
+Look at the top-right of the terminal box and click the [+] icon to open a second tab.
+
+In the new empty tab, type this and press Enter:
+npm install
+
+Once the bars stop moving, type this and press Enter:
+npm run dev
+
+A link like http://localhost:5173 will appear. Hold the Ctrl key and click that link.
+
+🛠️ TROUBLESHOOTING
+"Command not found": Close VS Code and open it again.
+
+"White screen": Go back to Step 3 and make sure the first terminal is still running.
+
+"Permissions error": If your computer asks for permission, click "Allow" or "Yes".
+
+© 2026 CyberQuest Project Team
