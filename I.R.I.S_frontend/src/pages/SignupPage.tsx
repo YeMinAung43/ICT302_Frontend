@@ -1,14 +1,60 @@
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SignupPage = () => {
   const navigate = useNavigate();
 
-  // This function handles what happens when the user clicks "Create Account"
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault(); // Stops the page from refreshing
-    // Logic: In a real app, you'd save the user data here.
-    // For your prototype, we jump straight to the verification screen.
-    navigate('/verify-email');
+  // 1. Setup state for all form fields and UI states
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 2. The async function to talk to Django's signup view
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    setError('');
+
+    // Frontend validation: Check if passwords match first
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // NOTE: Make sure '/api/signup/' matches your Django urls.py
+      const response = await fetch('http://127.0.0.1:8000/api/signup/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // We send exactly what Django expects: email, username, and password
+        body: JSON.stringify({
+          email: email,
+          username: username,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success! Django returned status 201. 
+        // Jump to the verification screen (or directly to login)
+        navigate('/verify-email', { state: { email: email } });
+      } else {
+        // Display whatever error Django sent back (e.g., "The username is already taken")
+        setError(data.error || 'Failed to create account.');
+      }
+    } catch (err) {
+      setError('Cannot connect to server. Is the Python backend running?');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -46,12 +92,21 @@ const SignupPage = () => {
           <div className="bg-white dark:bg-[#151726] rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
             <form className="flex flex-col gap-5" onSubmit={handleSignup}>
               
+              {/* Error Message Display */}
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-sm font-medium text-center">
+                  {error}
+                </div>
+              )}
+
               {/* Username Input */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-slate-700 dark:text-slate-200 text-sm font-medium">Username</label>
                 <div className="relative">
                   <span className="material-symbols-outlined notranslate absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person</span>
                   <input 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="form-input w-full rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0a0b14] h-12 pl-11 pr-4 text-sm placeholder:text-slate-400 transition-all" 
                     placeholder="Enter username" 
                     type="text" 
@@ -66,6 +121,8 @@ const SignupPage = () => {
                 <div className="relative">
                   <span className="material-symbols-outlined notranslate absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
                   <input 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="form-input w-full rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0a0b14] h-12 pl-11 pr-4 text-sm placeholder:text-slate-400 transition-all" 
                     placeholder="name@company.com" 
                     type="email" 
@@ -80,6 +137,8 @@ const SignupPage = () => {
                 <div className="relative">
                   <span className="material-symbols-outlined notranslate absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
                   <input 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="form-input w-full rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0a0b14] h-12 pl-11 pr-4 text-sm placeholder:text-slate-400 transition-all" 
                     placeholder="••••••••" 
                     type="password" 
@@ -94,6 +153,8 @@ const SignupPage = () => {
                 <div className="relative">
                   <span className="material-symbols-outlined notranslate absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock_reset</span>
                   <input 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="form-input w-full rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0a0b14] h-12 pl-11 pr-4 text-sm placeholder:text-slate-400 transition-all" 
                     placeholder="••••••••" 
                     type="password" 
@@ -104,10 +165,19 @@ const SignupPage = () => {
 
               {/* Submit Button */}
               <button 
-                className="w-full mt-2 cursor-pointer rounded-xl h-12 bg-[#1337ec] text-white text-sm font-bold tracking-wide hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20" 
+                disabled={isLoading}
+                className={`w-full mt-2 rounded-xl h-12 text-white text-sm font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2
+                  ${isLoading ? 'bg-blue-600/70 cursor-not-allowed' : 'bg-[#1337ec] hover:bg-blue-700 active:scale-[0.98] shadow-blue-600/20'}`} 
                 type="submit"
               >
-                Create Account
+                {isLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                    Creating...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
               </button>
 
               {/* Footer Link */}
@@ -128,7 +198,7 @@ const SignupPage = () => {
       </main>
 
       <footer className="py-8 text-center">
-        <p className="text-slate-400 dark:text-slate-600 text-xs">© 2024 ShieldResponse</p>
+        <p className="text-slate-400 dark:text-slate-600 text-xs">© 2026 ShieldResponse</p>
       </footer>
     </div>
   );

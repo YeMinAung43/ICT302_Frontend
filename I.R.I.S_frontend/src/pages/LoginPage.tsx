@@ -1,20 +1,52 @@
-// import React from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  
+  // 1. Setup state to hold the input values and error messages
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // 2. The new async login function to talk to Django
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
     
-    // In a real app, you'd validate credentials here.
-    // For now, we'll just "sign in" and go to the dashboard:
-    navigate('/DifficultySelectionPage'); 
+    try {
+      // NOTE: Make sure this URL matches exactly what is in your Django urls.py
+      const response = await fetch('http://127.0.0.1:8000/api/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Crucial for receiving the JWT HttpOnly cookies!
+        body: JSON.stringify({ 
+          username: username, 
+          password: password 
+        }),
+      });
+
+      if (response.ok) {
+        // Success! Cookies are set, navigate to the game
+        navigate('/DifficultySelectionPage'); 
+      } else {
+        // Handle incorrect passwords or missing users
+        const data = await response.json();
+        setError(data.detail || data.error || 'Invalid username or password.');
+      }
+    } catch (err) {
+      setError('Cannot connect to server. Is the Python backend running?');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 bg-slate-50 dark:bg-[#0a0c16]">
-      {/* 1. STYLES (Moved inside the return) */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -28,7 +60,6 @@ const LoginPage = () => {
         }}
       />
 
-      {/* 2. LOGIN CARD CONTAINER */}
       <div className="w-full max-w-[420px] px-2 flex flex-col items-center">
         <div className="flex flex-col items-center gap-4 mb-8">
           <div className="size-14 text-blue-600">
@@ -45,14 +76,25 @@ const LoginPage = () => {
 
         <div className="w-full bg-white dark:bg-[#1c1d27] rounded-2xl shadow-xl border border-slate-100 dark:border-[#282b39] p-8 md:p-10">
           <form className="space-y-6" onSubmit={handleLogin}>
+            
+            {/* 3. Error Message Display */}
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-sm font-medium text-center">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-slate-600 dark:text-slate-300 text-sm font-medium ml-1">Email Address</label>
+              <label className="text-slate-600 dark:text-slate-300 text-sm font-medium ml-1">Username</label>
               <div className="form-input-container relative flex items-center group">
-                <span className="input-icon material-symbols-outlined absolute left-4 text-slate-400 dark:text-[#9da1b9] transition-colors">alternate_email</span>
+                <span className="input-icon material-symbols-outlined absolute left-4 text-slate-400 dark:text-[#9da1b9] transition-colors">person</span>
                 <input
-                  className="form-input flex w-full rounded-xl border border-slate-200 dark:border-[#3b3f54] bg-slate-50 dark:bg-[#101322] text-slate-900 dark:text-white h-14 pl-12 pr-4 outline-none focus:border-blue-500"
-                  placeholder="name@company.com"
-                  type="email"required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="form-input flex w-full rounded-xl border border-slate-200 dark:border-[#3b3f54] bg-slate-50 dark:bg-[#101322] text-slate-900 dark:text-white h-14 pl-12 pr-4 outline-none focus:border-blue-500 transition-colors"
+                  placeholder="username" 
+                  required
+
                 />
               </div>
             </div>
@@ -60,36 +102,48 @@ const LoginPage = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-slate-600 dark:text-slate-300 text-sm font-medium">Password</label>
-                <Link to="/ForgotPasswordPage-email" className="text-sm text-[#1337ec] hover:underline">
-   Forgot Password?
-</Link>
+                <Link to="/ForgotPasswordPage-username" className="text-sm text-[#1337ec] hover:underline">
+                  Forgot Password?
+                </Link>
               </div>
               <div className="form-input-container relative flex items-center group">
                 <span className="input-icon material-symbols-outlined absolute left-4 text-slate-400 dark:text-[#9da1b9] transition-colors">lock</span>
                 <input
-                  className="form-input flex w-full rounded-xl border border-slate-200 dark:border-[#3b3f54] bg-slate-50 dark:bg-[#101322] text-slate-900 dark:text-white h-14 pl-12 pr-12 outline-none focus:border-blue-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input flex w-full rounded-xl border border-slate-200 dark:border-[#3b3f54] bg-slate-50 dark:bg-[#101322] text-slate-900 dark:text-white h-14 pl-12 pr-12 outline-none focus:border-blue-500 transition-colors"
                   placeholder="••••••••"
-                  type="password"required
+                  type="password" 
+                  required
                 />
               </div>
             </div>
 
-
+            {/* 4. Dynamic Submit Button */}
             <button
-              className="w-full rounded-xl bg-blue-600 h-14 text-white text-base font-bold tracking-wide hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg"
+              disabled={isLoading}
+              className={`w-full rounded-xl bg-blue-600 h-14 text-white text-base font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2
+                ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700 active:scale-[0.98]'}`}
               type="submit"
             >
-              Sign In
+              {isLoading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Authenticating...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 
           <div className="mt-8 text-center">
-          <p className="text-sm text-[#9da1b9]">
-  New to the platform?
-  <Link to="/signup" className="text-blue-600 font-bold hover:underline ml-1">
-    Create an account
-  </Link>
-</p>
+            <p className="text-sm text-[#9da1b9]">
+              New to the platform?
+              <Link to="/signup" className="text-blue-600 font-bold hover:underline ml-1">
+                Create an account
+              </Link>
+            </p>
           </div>
         </div>
       </div>
