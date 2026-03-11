@@ -26,7 +26,7 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/EmailSuccessPage-email" element={<EmailSuccessPage />} />
-          <Route path="/ForgotPasswordPage-email" element={<ForgotPasswordPage />} />
+          <Route path="/ForgotPasswordPage-username" element={<ForgotPasswordPage />} />
           <Route path="/recovery-sent" element={<RecoveryLinkSentPage />} />
           <Route path="/ResetPasswordPage-sent" element={<ResetPasswordPage />} />
           <Route path="/ScenarioSelectionPage" element={<ScenarioSelectionPage />} />
