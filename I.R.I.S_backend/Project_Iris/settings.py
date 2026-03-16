@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'corsheaders', 
+
     'rest_framework',
 
     'api',
@@ -35,6 +37,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -121,8 +124,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = ''   # your gmail here
-EMAIL_HOST_PASSWORD = '' # your app password here
+EMAIL_HOST_USER = 'yeminag43@gmail.com'   # your gmail here
+EMAIL_HOST_PASSWORD = 'jnfrglmjzfuodmie' # your app password here
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
@@ -138,4 +141,13 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = 'gameplay.User'
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
 

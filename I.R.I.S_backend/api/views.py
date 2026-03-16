@@ -51,12 +51,12 @@ def signup(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
-    verify_link = f'http://localhost:8000/api/verify-email/{uid}/{token}/'
+    verify_link = f"http://localhost:5173/verify-email/{uid}/{token}"
 
     send_mail(
         subject = 'Verify your email',
         message = f'Click the link to verify:\n{verify_link}',
-        from_email='no-reply@localhost.com',
+        from_email='yeminag43@gmail.com',
         recipient_list=[email],
     )
 
@@ -214,12 +214,12 @@ def password_reset_request(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
-    reset_link = f'http://localhost:8000/api/password-reset/{uid}/{token}/'
+    reset_link = f"http://localhost:5173/reset-password/{uid}/{token}"
 
     send_mail(
         subject = 'Password reset',
         message = f'Reset Your Password: {reset_link}',
-        from_email = 'no-reply@localhost.com',
+        from_email = 'yeminag43@gmail.com',
         recipient_list = [email],
     )
 

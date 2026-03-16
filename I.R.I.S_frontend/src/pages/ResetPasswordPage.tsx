@@ -8,7 +8,7 @@ const ResetPasswordPage = () => {
     // In a real app, you would verify that both passwords match here.
     
     // After "updating", we send them to the success page you already made!
-    navigate('/verify-success'); 
+    navigate('/'); 
   };
 
   return (

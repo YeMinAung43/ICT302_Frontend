@@ -25,10 +25,12 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/verify-email/:uidb64/:token" element={<VerifyEmailPage />} />
           <Route path="/EmailSuccessPage-email" element={<EmailSuccessPage />} />
           <Route path="/ForgotPasswordPage-username" element={<ForgotPasswordPage />} />
           <Route path="/recovery-sent" element={<RecoveryLinkSentPage />} />
           <Route path="/ResetPasswordPage-sent" element={<ResetPasswordPage />} />
+          <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordPage />} />
           <Route path="/ScenarioSelectionPage" element={<ScenarioSelectionPage />} />
           <Route path="/DifficultySelectionPage" element={<DifficultySelectionPage />} />
           <Route path="/ScenarioBriefingPage/:id" element={<ScenarioBriefingPage />} />
