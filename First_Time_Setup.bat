@@ -6,12 +6,17 @@ echo     (This will take a few minutes. Please wait!)
 echo ===================================================
 echo.
 
-echo [1/2] Installing Python Backend Packages...
+echo [1/3] Installing Python Backend Packages...
 cd I.R.I.S_backend
 pip install -r requirements.txt
 
 echo.
-echo [2/2] Installing Node.js Frontend Packages...
+echo [2/3] Building the Database...
+:: This line automatically creates all the tables on a new computer!
+python manage.py migrate
+
+echo.
+echo [3/3] Installing Node.js Frontend Packages...
 cd ../I.R.I.S_frontend
 npm install
 
