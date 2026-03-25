@@ -13,6 +13,7 @@ pip install -r requirements.txt
 echo.
 echo [2/3] Building the Database...
 :: This line automatically creates all the tables on a new computer!
+python manage.py makemigrations
 python manage.py migrate
 
 echo.

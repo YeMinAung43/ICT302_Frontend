@@ -1,47 +1,26 @@
-import random
+import requests, json
 
-from ..models import GameSession, StageRun, ScenarioSnapshot, QuestionRun
+from django.db import transaction
 
+from .service_ai import generate_ai_scenario
+from ..models import (GameSession,
+                      StageRun,
+                      QuestionRun)
 
+@transaction.atomic
 def create_session(user, incident_type, difficulty):
-
-    STAGES = [
-        'prepare',
-        'detect',
-        'analyse',
-        'remediate',
-        'post_incident',
-    ]
 
     session = GameSession.objects.create(
         user = user,
         incident_type = incident_type,
         difficulty = difficulty,
         status = 'in progress',
-    )
 
-    # TODO: AI Integration
-    # placeholder scenario snapshot for now
-    ScenarioSnapshot.objects.create(
-        session = session,
-        seed = random.randint(1, 999999),
-        scenario_json = {
-            'title': 'Placeholder Scenario',
-            'incident_type': incident_type,
-            'difficulty': difficulty,
-        }
-    )
-
-    for index, stage in enumerate(STAGES):
-        status = 'active' if index == 0 else 'locked'
-
-        StageRun.objects.create(
-            session = session,
-            stage_name = stage,
-            status = status,
-            order_index = index
+        scenario_json = generate_ai_scenario(
+            incident_type = incident_type,
+            difficulty = difficulty,
         )
-
+    )
     return session
 
 def get_session_state(session):

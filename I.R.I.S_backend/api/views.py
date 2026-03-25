@@ -51,11 +51,13 @@ def signup(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
+    # OUR FIX: Pointing to React (5173) instead of Django (8000)
     verify_link = f"http://localhost:5173/verify-email/{uid}/{token}"
 
     send_mail(
         subject = 'Verify your email',
         message = f'Click the link to verify:\n{verify_link}',
+        # OUR FIX: Using your real Gmail so Google doesn't crash
         from_email='yeminag43@gmail.com',
         recipient_list=[email],
     )
@@ -89,17 +91,20 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             if access_token and refresh_token:
 
                 # assign tokens to cookie
-                response.set_cookie(key = 'access',
-                                    value = access_token,
-                                    httponly = True,
-                                    samesite = 'Strict',
-                                    secure = True,)
-                response.set_cookie(key = 'refresh',
-                                    value = refresh_token,
-                                    httponly=True,
-                                    samesite='Strict',
-                                    secure=True,
-                                    )
+                response.set_cookie(
+                    key = 'access',
+                    value = access_token,
+                    httponly = True,
+                    samesite = 'Strict',
+                    secure = True,
+                )
+                response.set_cookie(
+                    key = 'refresh',
+                    value = refresh_token,
+                    httponly=True,
+                    samesite='Strict',
+                    secure=True,
+                )
         return response
 
 # this is the view for refreshing tokens
@@ -214,11 +219,13 @@ def password_reset_request(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
+    # OUR FIX: Pointing to React (5173) and using {uid} instead of {uidb64}
     reset_link = f"http://localhost:5173/reset-password/{uid}/{token}"
 
     send_mail(
         subject = 'Password reset',
         message = f'Reset Your Password: {reset_link}',
+        # OUR FIX: Using your real Gmail address
         from_email = 'yeminag43@gmail.com',
         recipient_list = [email],
     )

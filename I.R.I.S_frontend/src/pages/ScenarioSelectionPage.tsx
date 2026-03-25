@@ -1,104 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// 1. Data Structure
+// 1. The visual catalog of scenarios (The actual briefing text will come from Django!)
 const scenarios = [
-  {
-    id: 'phishing',
-    title: 'The Suspicious Email',
-    desc: 'Someone in Finance received a strange invoice. Is it phishing or a real request?',
-    tag: 'Communication',
-    icon: 'alternate_email',
-    colorClass: 'text-blue-500',
-    bgClass: 'bg-blue-500/20',
-    hoverBgClass: 'group-hover:bg-blue-500',
-    tagClass: 'bg-blue-500/10 text-blue-500',
-    locked: false,
+  { 
+    id: 'phishing', 
+    title: 'Spear Phishing', 
+    desc: 'An executive received an urgent email demanding wire transfer details. Is it a scam?', 
+    tag: 'Social Engineering', icon: 'alternate_email', colorClass: 'text-blue-500', bgClass: 'bg-blue-500/20', hoverBgClass: 'group-hover:bg-blue-500', tagClass: 'bg-blue-500/10 text-blue-500', locked: false 
   },
-  {
-    id: 'ransomware',
-    title: 'Locked Computer',
-    desc: 'A workstation has been encrypted with a demand for payment. Act fast!',
-    tag: 'Ransomware',
-    icon: 'lock_person',
-    colorClass: 'text-rose-500',
-    bgClass: 'bg-rose-500/20',
-    hoverBgClass: 'group-hover:bg-rose-500',
-    tagClass: 'bg-rose-500/10 text-rose-500',
-    locked: false,
+  { 
+    id: 'ransomware', 
+    title: 'Ransomware Outbreak', 
+    desc: 'Critical workstations are locked down with a red screen demanding cryptocurrency.', 
+    tag: 'Encryption', icon: 'lock_person', colorClass: 'text-rose-500', bgClass: 'bg-rose-500/20', hoverBgClass: 'group-hover:bg-rose-500', tagClass: 'bg-rose-500/10 text-rose-500', locked: false 
   },
-  {
-    id: 'usb',
-    title: 'The Mystery USB',
-    desc: 'A flash drive was found in the parking lot. Someone just plugged it in.',
-    tag: 'Physical Security',
-    icon: 'usb',
-    colorClass: 'text-amber-500',
-    bgClass: 'bg-amber-500/20',
-    hoverBgClass: 'group-hover:bg-amber-500',
-    tagClass: 'bg-amber-500/10 text-amber-500',
-    recommended: true,
-    locked: false,
+  { 
+    id: 'malware', 
+    title: 'Malware Detection', 
+    desc: 'Antivirus alerts are going off across the marketing department. Contain the spread!', 
+    tag: 'Endpoint Security', icon: 'bug_report', colorClass: 'text-amber-500', bgClass: 'bg-amber-500/20', hoverBgClass: 'group-hover:bg-amber-500', tagClass: 'bg-amber-500/10 text-amber-500', locked: false 
   },
-  {
-    id: 'login',
-    title: 'Unknown Login',
-    desc: 'New login detected from a location your CEO has never visited.',
-    tag: 'Authentication',
-    icon: 'manage_accounts',
-    colorClass: 'text-emerald-500',
-    bgClass: 'bg-emerald-500/20',
-    hoverBgClass: 'group-hover:bg-emerald-500',
-    tagClass: 'bg-emerald-500/10 text-emerald-500',
-    locked: false,
+  { 
+    id: 'data_loss', 
+    title: 'Data Loss Prevention', 
+    desc: 'Massive amounts of encrypted zip files are being uploaded to an unknown external IP.', 
+    tag: 'Exfiltration', icon: 'data_usage', colorClass: 'text-purple-500', bgClass: 'bg-purple-500/20', hoverBgClass: 'group-hover:bg-purple-500', tagClass: 'bg-purple-500/10 text-purple-500', locked: false 
   },
-  {
-    id: 'wifi',
-    title: 'The Wi-Fi Ghost',
-    desc: "A rogue access point is broadcasting 'Corporate_Guest'. It's not ours.",
-    tag: 'Network',
-    icon: 'wifi_tethering_off',
-    colorClass: 'text-indigo-500',
-    bgClass: 'bg-indigo-500/20',
-    hoverBgClass: 'group-hover:bg-indigo-500',
-    tagClass: 'bg-indigo-500/10 text-indigo-500',
-    locked: false,
-  },
-  {
-    id: 'leak',
-    title: 'Leaked Secrets',
-    desc: 'A developer accidentally pushed API keys to a public GitHub repo.',
-    tag: 'Data Leak',
-    icon: 'code_off',
-    colorClass: 'text-purple-500',
-    bgClass: 'bg-purple-500/20',
-    hoverBgClass: 'group-hover:bg-purple-500',
-    tagClass: 'bg-purple-500/10 text-purple-500',
-    locked: false,
-  },
-  {
-    id: 'ddos',
-    title: 'Server Overload',
-    desc: 'Website traffic is spiking 5000% higher than usual. Is it a sale or a DDoS?',
-    tag: 'Performance',
-    icon: 'speed',
-    colorClass: 'text-orange-500',
-    bgClass: 'bg-orange-500/20',
-    hoverBgClass: 'group-hover:bg-orange-500',
-    tagClass: 'bg-orange-500/10 text-orange-500',
-    locked: false,
-  },
-  {
-    id: 'expert',
-    title: 'Zero Day Hero',
-    desc: 'Reach Level 5 to unlock this expert-tier incident response scenario.',
-    tag: 'Locked',
-    icon: 'psychology',
-    colorClass: 'text-slate-500',
-    bgClass: 'bg-slate-200 dark:bg-slate-800',
-    hoverBgClass: '',
-    tagClass: 'bg-slate-200 dark:bg-slate-800 text-slate-500',
-    locked: false,
+  { 
+    id: 'denial_of_service', 
+    title: 'DDoS Attack', 
+    desc: 'The main customer portal is unresponsive and traffic is spiking 10,000% above normal.', 
+    tag: 'Network Performance', icon: 'speed', colorClass: 'text-orange-500', bgClass: 'bg-orange-500/20', hoverBgClass: 'group-hover:bg-orange-500', tagClass: 'bg-orange-500/10 text-orange-500', locked: false 
   }
 ];
 
@@ -106,21 +39,89 @@ const ScenarioSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 2. STATE: This tracks which difficulty button is clicked
+  // --- THE MISSING FIX: Added the loadingCardId state back! ---
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
+  const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
+
+  // UI STATE
   const [activeLevel, setActiveLevel] = useState(location.state?.level || 'beginner');
 
-  // 3. FILTER LOGIC: Updates automatically when activeLevel changes
+  // FILTER LOGIC
   const filteredScenarios = scenarios.filter((s) => {
-    if (activeLevel === 'beginner') {
-      return ['phishing', 'usb', 'login'].includes(s.id);
-    }
-    if (activeLevel === 'intermediate') {
-      return s.locked === false;
-    }
-    return true; // Expert sees all
+    if (activeLevel === 'beginner') return ['phishing', 'ransomware'].includes(s.id);
+    if (activeLevel === 'intermediate') return s.locked === false;
+    return true; 
   });
 
-  const handleLogout = () => navigate('/');
+  // Fetch Active/Paused Sessions
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/sessions/', {
+          method: 'GET',
+          credentials: 'include', 
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setActiveSessions(data);
+        }
+      } catch (error) {
+        console.error("Failed to load active sessions:", error);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  // --- THE NEW BACKEND-DRIVEN FLOW ---
+  const handleStartScenario = async (incidentId: string) => {
+    setLoadingCardId(incidentId); // Turn on the loading spinner!
+
+    const difficultyMap: Record<string, string> = {
+      'beginner': 'easy',
+      'intermediate': 'medium',
+      'expert': 'hard'
+    };
+    const djangoDifficulty = difficultyMap[activeLevel];
+
+    try {
+      const response = await fetch('http://localhost:8000/api/session/start/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          incident_type: incidentId,
+          difficulty: djangoDifficulty
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Teleport to the Briefing Page, passing Django's generated story!
+        navigate(`/ScenarioBriefingPage/${data.session_id}`, { 
+          state: { 
+            briefingData: data.scenario_json, // Your colleague will add this to the API
+            difficulty: djangoDifficulty 
+          } 
+        }); 
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to start: ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      console.error("Server connection failed:", error);
+      alert("Could not connect to the server.");
+    } finally {
+      setLoadingCardId(null); // Turn the spinner off when done!
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+        await fetch('http://localhost:8000/api/logout/', { method: 'POST', credentials: 'include' });
+    } catch (e) { console.error(e) }
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0a0c16] text-slate-900 dark:text-white flex flex-col font-['Space_Grotesk']">
@@ -132,9 +133,8 @@ const ScenarioSelectionPage = () => {
             <div className="w-10 h-10 bg-[#1337ec] rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
               <span className="material-icons text-white">security</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">CYBER<span className="text-[#1337ec]">QUEST</span></span>
+            <span className="text-xl font-bold tracking-tight">SHIELD<span className="text-[#1337ec]">RESPONSE</span></span>
           </div>
-
           <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-rose-500 font-bold transition-all group">
             <span className="material-icons text-xl group-hover:rotate-180 transition-transform">logout</span>
             <span className="hidden sm:inline">LOGOUT</span>
@@ -142,8 +142,35 @@ const ScenarioSelectionPage = () => {
         </div>
       </nav>
 
-      {/* Header & Difficulty Switcher */}
-      <main className="max-w-7xl mx-auto px-6 py-12 flex-grow">
+      <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
+        
+        {/* Active Operations Section */}
+        {activeSessions.length > 0 && (
+          <div className="mb-12 bg-slate-200/50 dark:bg-[#151726]/80 p-6 rounded-2xl border border-blue-500/20">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <span className="material-icons text-[#1337ec] animate-pulse">radar</span> 
+              Active Operations
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeSessions.map((session) => (
+                <div key={session.id} className="bg-white dark:bg-[#0a0c16] p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                  <div>
+                    <div className="font-bold">Op #{session.id}: <span className="uppercase text-[#1337ec]">{session.incident_type}</span></div>
+                    <div className="text-sm text-slate-500">Status: {session.status}</div>
+                  </div>
+                  <button 
+                    onClick={() => navigate(`/play/${session.id}`)}
+                    className="px-4 py-2 bg-[#1337ec]/10 text-[#1337ec] hover:bg-[#1337ec] hover:text-white rounded-lg font-bold transition-colors"
+                  >
+                    Resume
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Header & Difficulty Switcher */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -154,7 +181,6 @@ const ScenarioSelectionPage = () => {
             </p>
           </div>
 
-          {/* THE 3 BUTTON SWITCHER */}
           <div className="flex bg-slate-200 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-300 dark:border-slate-700 w-fit self-start md:self-auto">
             {['beginner', 'intermediate', 'expert'].map((lvl) => (
               <button
@@ -177,11 +203,15 @@ const ScenarioSelectionPage = () => {
           {filteredScenarios.map((s) => (
             <div 
               key={s.id}
-              onClick={() => !s.locked && navigate(`/ScenarioBriefingPage/${s.id}`)}
+              onClick={() => {
+                if (!s.locked && !loadingCardId) handleStartScenario(s.id);
+              }}
               className={`group relative overflow-hidden bg-white dark:bg-[#151726] border-2 rounded-2xl p-8 flex flex-col items-center text-center transition-all duration-300
                 ${s.locked 
                   ? 'cursor-not-allowed opacity-60 grayscale border-dashed border-slate-300 dark:border-slate-800' 
-                  : 'cursor-pointer border-slate-100 dark:border-slate-800 hover:border-[#1337ec]/50 hover:-translate-y-2'
+                  : loadingCardId === s.id 
+                    ? 'border-[#1337ec] opacity-80' // Loading state style
+                    : 'cursor-pointer border-slate-100 dark:border-slate-800 hover:border-[#1337ec]/50 hover:-translate-y-2'
                 }`}
             >
               <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 
@@ -189,13 +219,14 @@ const ScenarioSelectionPage = () => {
               `}>
                 <span className={`material-icons text-4xl transition-colors
                   ${s.locked ? 'text-slate-400' : `${s.colorClass} group-hover:text-white`}
+                  ${loadingCardId === s.id ? 'animate-spin' : ''}
                 `}>
-                  {s.icon}
+                  {loadingCardId === s.id ? 'autorenew' : s.icon}
                 </span>
               </div>
 
               <h3 className={`text-2xl font-bold mb-3 ${s.locked ? 'text-slate-400' : 'text-slate-900 dark:text-white'}`}>
-                {s.title}
+                {loadingCardId === s.id ? 'Initializing...' : s.title}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
                 {s.desc}
