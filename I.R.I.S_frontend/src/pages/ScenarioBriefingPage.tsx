@@ -3,43 +3,45 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 const ScenarioBriefingPage = () => {
   const navigate = useNavigate();
-  
-  // 1. Grab the Session ID from the URL
-  const { id } = useParams(); 
-  
-  // 2. Grab Django's generated story from the router state
+  const { id } = useParams();
   const location = useLocation();
+  
+  // 1. Grab the data sent from ScenarioSelectionPage
   const rawDjangoData = location.state?.briefingData;
-  const difficulty = location.state?.difficulty || 'medium';
+  const difficulty = location.state?.difficulty || 'easy';
 
-  // 3. Map Django's data to your UI variables 
-  // (We use fallback text just in case Django hasn't updated the API yet)
+  // 2. Map AI data to your UI layout
+// 2. Map AI data to your UI layout with Smarter Storytelling
   const data = {
-    title: rawDjangoData?.title || "Classified Incident",
-    priority: rawDjangoData?.priority || "URGENT ALERT",
-    from: rawDjangoData?.from || "Internal Systems",
-    subject: rawDjangoData?.subject || "Awaiting Data...",
-    body: rawDjangoData?.body || "The AI is currently processing this scenario. Please proceed to the investigation.",
-    attachment: rawDjangoData?.attachment || "unknown_file.bin",
-    hint: rawDjangoData?.hint || "Proceed with caution.",
-    xp: difficulty === 'hard' ? "2000 XP" : difficulty === 'medium' ? "1200 XP" : "500 XP",
-    time: "20 MINS"
+    title: rawDjangoData?.scenario_title || "Classified Incident",
+    priority: "CRITICAL ALERT #9901",
+    from: "System Sentinel <alerts@internal-monitor.local>",
+    subject: `DETECTION: ${rawDjangoData?.scenario_title || 'Unauthorized Activity'}`,
+    
+    // --- IMPROVED BODY: Combines the Brief + the first AI Inject ---
+    body: rawDjangoData 
+      ? `${rawDjangoData.scenario_brief} \n\nDETAILED TELEMETRY: ${rawDjangoData.injects?.[0]?.text || ''}`
+      : "A easy level phishing incident has been detected.",
+    
+    attachment: "threat_signature_analysis.exe",
+    
+    // Use the second inject (if it exists) as the hint, or a fallback
+    hint: rawDjangoData?.injects?.[1]?.text || rawDjangoData?.injects?.[0]?.text || "Initial suspicious activity reported.",
+    
+    time: "20 MINS",
+    xp: difficulty === 'hard' ? "2000 XP" : difficulty === 'medium' ? "1000 XP" : "500 XP"
   };
 
-  // 4. The "Begin" button just navigates to the game now! (No fetch needed)
   const handleBeginInvestigation = () => {
+    // Navigate to the dynamic play route we set up in App.tsx
     navigate(`/play/${id}`); 
   };
 
   return (
     <div className="min-h-screen bg-[#0a0c16] text-white font-['Space_Grotesk'] relative overflow-x-hidden">
-      {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#1337ec]/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      {/* Grid Overlay */}
       <div className="fixed inset-0 pointer-events-none -z-20 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(#1337ec 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
-      {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-[#1337ec]/10 bg-[#0a0c16]/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -54,6 +56,7 @@ const ScenarioBriefingPage = () => {
       <main className="flex items-center justify-center min-h-[calc(100vh-80px)] px-6 py-12 relative z-10">
         <div className="max-w-4xl w-full">
           
+          {/* ⬅️ THE BACK ARROW IS BACK! */}
           <div 
             onClick={() => navigate('/ScenarioSelectionPage')} 
             className="mb-8 flex items-center gap-2 text-slate-500 hover:text-[#1337ec] transition-colors cursor-pointer group w-fit"
@@ -61,7 +64,7 @@ const ScenarioBriefingPage = () => {
             <span className="material-icons text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
             <span className="text-sm font-medium uppercase tracking-wider">Back to Scenarios</span>
           </div>
-          
+
           <div className="bg-slate-900/40 border border-[#1337ec]/20 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
             <div className="bg-[#1337ec]/10 border-b border-white/10 p-6">
               <span className="text-[#1337ec] font-bold text-xs uppercase tracking-widest">{data.priority}</span>
@@ -74,7 +77,11 @@ const ScenarioBriefingPage = () => {
                   <p><span className="text-slate-500">From:</span> {data.from}</p>
                   <p><span className="text-slate-500">Subject:</span> <span className="text-rose-400 font-bold">{data.subject}</span></p>
                 </div>
-                <p className="text-slate-300 leading-relaxed">{data.body}</p>
+                
+                <p className="text-slate-300 leading-relaxed text-lg font-medium">
+                  {data.body}
+                </p>
+                
                 <div className="mt-6 flex items-center gap-2 text-[#1337ec]">
                   <span className="material-icons text-sm">attach_file</span>
                   <span className="text-sm font-mono">{data.attachment}</span>
@@ -82,8 +89,6 @@ const ScenarioBriefingPage = () => {
               </div>
 
               <div className="flex flex-col items-center gap-6">
-                
-                {/* Instantly jumps to the game, bringing the Session ID! */}
                 <button 
                   onClick={handleBeginInvestigation}
                   className="w-full md:w-auto px-12 py-5 bg-[#1337ec] hover:bg-blue-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(19,55,236,0.4)]"
@@ -93,24 +98,16 @@ const ScenarioBriefingPage = () => {
                 </button>
 
                 <div className="flex flex-wrap justify-center items-center gap-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                  <div className="flex items-center gap-2">
-                    <span className="material-icons text-sm">schedule</span>
-                    <span>{data.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-icons text-sm">trending_up</span>
-                    <span>DIFFICULTY: {difficulty}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-icons text-sm">military_tech</span>
-                    <span>{data.xp}</span>
-                  </div>
+                  <div className="flex items-center gap-2"><span className="material-icons text-sm">schedule</span><span>{data.time}</span></div>
+                  <div className="flex items-center gap-2"><span className="material-icons text-sm">trending_up</span><span>DIFFICULTY: {difficulty}</span></div>
+                  <div className="flex items-center gap-2"><span className="material-icons text-sm">military_tech</span><span>{data.xp}</span></div>
+                  <div className="flex items-center gap-2 text-blue-400"><span className="material-icons text-sm">memory</span><span>AI SCENARIO</span></div>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="mt-8 text-center text-slate-500 text-sm italic">
+          
+          <div className="mt-8 text-center text-slate-400 text-sm italic font-medium">
             "{data.hint}"
           </div>
         </div>

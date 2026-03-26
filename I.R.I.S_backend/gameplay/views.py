@@ -29,6 +29,7 @@ def session_start_view(request):
         return Response({
             'session_id' : session.id,
             'status': session.status,
+            'scenario_json': session.scenario_json
         },
             status = status.HTTP_201_CREATED
         )

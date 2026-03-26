@@ -1,43 +1,120 @@
-import  { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { SCENARIO_QUESTIONS } from '../data/scenarioData';
 
 const IncidentChoicePage = () => {
   const navigate = useNavigate();
-  const { id,step } = useParams();
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [score, setScore] = useState(2450);
-
-// Convert the step from the URL (string) into a number
-  const currentStepIndex = parseInt(step || '0');
-
-  // Get the list of questions for this specific scenario
-  const questions = SCENARIO_QUESTIONS[id as keyof typeof SCENARIO_QUESTIONS] || SCENARIO_QUESTIONS.phishing;
   
-  // Get the EXACT question the user is on right now
+  // The ID is now the actual Session ID from Django (e.g., "14")
+  const { id } = useParams();
+  
+  // --- BACKEND STATES ---
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- GAME STATES ---
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [score, setScore] = useState(0);
+
+  // 1. Fetch AI Questions from Django when the page loads
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/generate/${id}/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          // Asking the AI to give us 3 questions for this stage
+          body: JSON.stringify({ questions_per_stage: 3 })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setQuestions(data);
+          // Set the timer to whatever time limit the AI decided for the first question!
+          if (data.length > 0) setTimeLeft(data[0].time_limit || 30);
+          setIsLoading(false);
+        } else {
+          console.error("Failed to generate questions");
+        }
+      } catch (error) {
+        console.error("Server error:", error);
+      }
+    };
+
+    fetchQuestions();
+  }, [id]);
+
   const currentQuestion = questions[currentStepIndex];
 
   // Timer Logic
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    if (isLoading || timeLeft <= 0) return;
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, isLoading]);
 
   // Calculate Dashoffset for SVG ring (283 is total circumference)
-  const dashOffset = 283 - (timeLeft / 30) * 283;
+  const maxTime = currentQuestion?.time_limit || 30;
+  const dashOffset = 283 - (timeLeft / maxTime) * 283;
 
-  const handleChoice = (choice: string) => {
-    // When they click an answer, we pass the SAME step to the feedback page
-    // so the feedback page knows which question we just answered!
-    if (choice === 'yes') {
-      navigate(`/CorrectFeedbackPage/${id}/${currentStepIndex}`);
-    } else if (choice === 'no') {
-      navigate(`/IncorrectFeedpage/${id}/${currentStepIndex}`);
-    } else {
-      navigate(`/MaybeFeedbackPage/${id}/${currentStepIndex}`);
+  // 2. Handle submitting the answer to Django
+  const handleChoice = async (optionId: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/answer/${id}/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_uid: currentQuestion.question_uid,
+          selected_option_id: optionId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // The backend has graded the answer! 
+        // We navigate to a Feedback page and pass the backend's results via state
+        navigate(`/FeedbackPage/${id}`, { 
+          state: { 
+            feedback: result, 
+            nextStep: currentStepIndex + 1,
+            isLastQuestion: currentStepIndex >= questions.length - 1
+          } 
+        });
+      } else {
+        console.error("Failed to submit answer");
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error("Server error:", error);
+      setIsSubmitting(false);
     }
   };
+
+  // Pre-defined styles to make the AI's dynamic options look beautiful
+  const BUTTON_STYLES = [
+    { bg: 'bg-emerald-600', icon: 'check_circle' },
+    { bg: 'bg-rose-600', icon: 'cancel' },
+    { bg: 'bg-amber-500', icon: 'help_outline' },
+    { bg: 'bg-purple-600', icon: 'policy' }
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0c16] text-white flex flex-col items-center justify-center font-['Space_Grotesk']">
+        <span className="material-icons text-6xl text-[#1337ec] animate-spin mb-4">autorenew</span>
+        <h2 className="text-2xl font-bold tracking-widest uppercase">AI is generating scenario...</h2>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) return null;
 
   return (
     <div className="min-h-screen bg-[#0a0c16] text-white font-['Space_Grotesk'] flex flex-col relative overflow-hidden">
@@ -49,17 +126,17 @@ const IncidentChoicePage = () => {
       `}} />
 
       {/* Nav */}
-      <nav className="w-full border-b border-white/5 bg-[#0a0c16]/80 backdrop-blur-md">
+      <nav className="w-full border-b border-white/5 bg-[#0a0c16]/80 backdrop-blur-md z-20">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#1337ec] rounded-lg flex items-center justify-center shadow-lg shadow-[#1337ec]/20">
               <span className="material-icons text-white text-sm">security</span>
             </div>
-            <span className="text-lg font-bold tracking-tight">CYBER<span className="text-[#1337ec]">QUEST</span></span>
+            <span className="text-lg font-bold tracking-tight">SHIELD<span className="text-[#1337ec]">RESPONSE</span></span>
           </div>
           <div className="flex items-center gap-4">
             <div className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-medium">
-              Scenario: <span className="text-[#1337ec]">{id?.replace('-', ' ')}</span>
+              Session ID: <span className="text-[#1337ec]">#{id}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-400">Score:</span>
@@ -80,66 +157,49 @@ const IncidentChoicePage = () => {
                 className="timer-ring" 
                 cx="50" cy="50" r="45" 
                 fill="transparent" 
-                stroke="#1337ec" 
+                stroke={timeLeft < 10 ? "#ef4444" : "#1337ec"} 
                 strokeWidth="6" 
                 strokeDasharray="283" 
                 strokeDashoffset={dashOffset} 
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-3xl font-bold">{timeLeft}</span>
+              <span className={`text-3xl font-bold ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                {timeLeft}
+              </span>
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-center leading-tight max-w-4xl tracking-tight uppercase">
-          {currentQuestion.text}
+          
+          {/* The actual AI Question Text */}
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-center leading-tight max-w-5xl tracking-tight uppercase">
+            {currentQuestion.question_text}
           </h1>
         </div>
 
-        {/* Choice Grid */}
+        {/* Dynamic Choice Grid based on AI options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl h-full">
-  
-  {/* YES BUTTON */}
-  <button 
-    onClick={() => handleChoice('yes')} 
-    className="choice-button bg-emerald-600 rounded-2xl p-10 flex flex-col items-center justify-center gap-6 text-center group"
-  >
-    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
-      <span className="material-icons text-5xl text-white">check_circle</span>
-    </div>
-    <span className="text-4xl font-black text-white uppercase italic tracking-widest">
-      YES
-    </span>
-  </button>
-
-  {/* NO BUTTON */}
-  <button 
-    onClick={() => handleChoice('no')} 
-    className="choice-button bg-rose-600 rounded-2xl p-10 flex flex-col items-center justify-center gap-6 text-center group"
-  >
-    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
-      <span className="material-icons text-5xl text-white">cancel</span>
-    </div>
-    <span className="text-4xl font-black text-white uppercase italic tracking-widest">
-      NO
-    </span>
-  </button>
-
-  {/* MAYBE BUTTON */}
-  <button 
-    onClick={() => handleChoice('maybe')} 
-    className="choice-button bg-amber-500 rounded-2xl p-10 flex flex-col items-center justify-center gap-6 text-center group"
-  >
-    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
-      <span className="material-icons text-5xl text-white">help_outline</span>
-    </div>
-    <span className="text-4xl font-black text-white uppercase italic tracking-widest">
-      MAYBE
-    </span>
-  </button>
+          {currentQuestion.options.map((option: any, index: number) => {
+            const style = BUTTON_STYLES[index % BUTTON_STYLES.length];
+            
+            return (
+              <button 
+                key={option.id}
+                onClick={() => handleChoice(option.id)} 
+                disabled={isSubmitting}
+                className={`choice-button ${style.bg} rounded-2xl p-8 flex flex-col items-center justify-center gap-6 text-center group ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
+                  <span className="material-icons text-4xl text-white">{style.icon}</span>
+                </div>
+                {/* The dynamic text from the AI option */}
+                <span className="text-xl font-bold text-white uppercase tracking-wider">
+                  {option.text}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </main>
-
-      
 
       {/* Decorative Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#1337ec]/10 rounded-full blur-[120px] -z-10" />

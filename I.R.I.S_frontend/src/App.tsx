@@ -10,15 +10,13 @@ import ScenarioSelectionPage from './pages/ScenarioSelectionPage';
 import DifficultySelectionPage from './pages/DifficultySelectionPage';
 import ScenarioBriefingPage from './pages/ScenarioBriefingPage';
 import IncidentChoicePage from './pages/IncidentChoicePage';
-import CorrectFeedbackPage from './pages/CorrectFeedbackPage';
-import IncorrectFeedpage from './pages/IncorrectFeedpage';
-import MaybeFeedbackPage from './pages/MaybeFeedbackPage';
 import MissionCompletePage from './pages/MissionCompletePage';
 
+// We import the new unified Feedback Page!
+import FeedbackPage from './pages/FeedbackPage';
 
 function App() {
   return (
-    // This is the Fragment that wraps everything
     <> 
       <BrowserRouter>
         <Routes>
@@ -31,15 +29,18 @@ function App() {
           <Route path="/recovery-sent" element={<RecoveryLinkSentPage />} />
           <Route path="/ResetPasswordPage-sent" element={<ResetPasswordPage />} />
           <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordPage />} />
+          
           <Route path="/ScenarioSelectionPage" element={<ScenarioSelectionPage />} />
           <Route path="/DifficultySelectionPage" element={<DifficultySelectionPage />} />
+          
+          {/* --- THE 3 NEW AI GAMEPLAY ROUTES --- */}
           <Route path="/ScenarioBriefingPage/:id" element={<ScenarioBriefingPage />} />
-          <Route path="/IncidentChoicePage/:id/:step" element={<IncidentChoicePage />} />
-          <Route path="/CorrectFeedbackPage/:id/:step" element={<CorrectFeedbackPage />} />
-          <Route path="/IncorrectFeedpage/:id/:step" element={<IncorrectFeedpage />} />
-          <Route path="/MaybeFeedbackPage/:id/:step" element={<MaybeFeedbackPage />} />
+          <Route path="/play/:id" element={<IncidentChoicePage />} />
+          <Route path="/FeedbackPage/:id" element={<FeedbackPage />} />
+          {/* -------------------------------------- */}
+
           <Route path="/MissionCompletePage/:id" element={<MissionCompletePage />} />
-          </Routes>
+        </Routes>
       </BrowserRouter>
     </>
   );
