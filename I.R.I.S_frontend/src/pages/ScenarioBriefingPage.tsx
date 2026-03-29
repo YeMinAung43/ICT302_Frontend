@@ -95,20 +95,9 @@ const ScenarioBriefingPage = () => {
                 >
                   <span>BEGIN INVESTIGATION</span>
                   <span className="material-icons">play_arrow</span>
-                </button>
-
-                <div className="flex flex-wrap justify-center items-center gap-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                  <div className="flex items-center gap-2"><span className="material-icons text-sm">schedule</span><span>{data.time}</span></div>
-                  <div className="flex items-center gap-2"><span className="material-icons text-sm">trending_up</span><span>DIFFICULTY: {difficulty}</span></div>
-                  <div className="flex items-center gap-2"><span className="material-icons text-sm">military_tech</span><span>{data.xp}</span></div>
-                  <div className="flex items-center gap-2 text-blue-400"><span className="material-icons text-sm">memory</span><span>AI SCENARIO</span></div>
-                </div>
+                </button>              
               </div>
             </div>
-          </div>
-          
-          <div className="mt-8 text-center text-slate-400 text-sm italic font-medium">
-            "{data.hint}"
           </div>
         </div>
       </main>

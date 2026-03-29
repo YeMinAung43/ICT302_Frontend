@@ -10,7 +10,7 @@ import ScenarioSelectionPage from './pages/ScenarioSelectionPage';
 import DifficultySelectionPage from './pages/DifficultySelectionPage';
 import ScenarioBriefingPage from './pages/ScenarioBriefingPage';
 import IncidentChoicePage from './pages/IncidentChoicePage';
-import MissionCompletePage from './pages/MissionCompletePage';
+import DebriefPage from './pages/DebriefPage';
 
 // We import the new unified Feedback Page!
 import FeedbackPage from './pages/FeedbackPage';
@@ -37,9 +37,8 @@ function App() {
           <Route path="/ScenarioBriefingPage/:id" element={<ScenarioBriefingPage />} />
           <Route path="/play/:id" element={<IncidentChoicePage />} />
           <Route path="/FeedbackPage/:id" element={<FeedbackPage />} />
+          <Route path="/debrief/:id" element={<DebriefPage />} />
           {/* -------------------------------------- */}
-
-          <Route path="/MissionCompletePage/:id" element={<MissionCompletePage />} />
         </Routes>
       </BrowserRouter>
     </>

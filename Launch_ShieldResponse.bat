@@ -5,6 +5,23 @@ echo     INITIATING SHIELDRESPONSE SIMULATION...
 echo ===================================================
 echo.
 
+echo [System Check] Verifying AI Engine Status...
+:: This scans the computer's background processes for Ollama
+tasklist | find /i "ollama.exe" >nul
+if "%ERRORLEVEL%"=="0" (
+    echo [OK] Ollama is active and ready to generate scenarios.
+) else (
+    echo.
+    echo ----------------- 🚨 WARNING 🚨 -----------------
+    echo Ollama is NOT running in the background!
+    echo ShieldResponse requires Ollama to generate the cyber scenarios.
+    echo Please open the Ollama app from your Start Menu right now.
+    echo -------------------------------------------------
+    echo.
+    pause
+)
+
+echo.
 echo Cleaning up ghost servers...
 :: This silently kills any old React servers so you never get the Port 5174 bug again!
 taskkill /F /IM node.exe >nul 2>&1

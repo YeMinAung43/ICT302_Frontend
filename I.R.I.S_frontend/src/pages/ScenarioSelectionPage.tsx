@@ -53,17 +53,28 @@ const ScenarioSelectionPage = () => {
     return true; 
   });
 
-  // Fetch Active/Paused Sessions
+ // Fetch Active/Paused Sessions
   useEffect(() => {
     const fetchSessions = async () => {
       try {
+        // 1. Grab the token from local storage
+        const token = localStorage.getItem('access') || localStorage.getItem('token');
+
         const response = await fetch('http://localhost:8000/api/sessions/', {
           method: 'GET',
           credentials: 'include', 
+          // 🚨 2. ADD THE HEADERS SO DJANGO KNOWS WHO YOU ARE:
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
         });
+        
         if (response.ok) {
           const data = await response.json();
           setActiveSessions(data);
+        } else {
+          console.error("Failed to fetch sessions, status:", response.status);
         }
       } catch (error) {
         console.error("Failed to load active sessions:", error);
@@ -73,15 +84,13 @@ const ScenarioSelectionPage = () => {
   }, []);
 
   // --- THE NEW BACKEND-DRIVEN FLOW ---
-  const handleStartScenario = async (incidentId: string) => {
+const handleStartScenario = async (incidentId: string) => {
     setLoadingCardId(incidentId);
 
-    const difficultyMap: Record<string, string> = {
-      'beginner': 'easy',
-      'intermediate': 'medium',
-      'expert': 'hard'
-    };
-    const djangoDifficulty = difficultyMap[activeLevel];
+    // 🛡️ THE SAFETY MAP: Force Django to look for the files we KNOW exist!
+    let safeDifficulty = 'easy';
+    if (incidentId === 'malware') safeDifficulty = 'medium';
+    if (incidentId === 'data_loss' || incidentId === 'dos') safeDifficulty = 'hard';
 
     try {
       const response = await fetch('http://localhost:8000/api/session/start/', {
@@ -90,20 +99,18 @@ const ScenarioSelectionPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           incident_type: incidentId,
-          difficulty: djangoDifficulty
+          difficulty: safeDifficulty // Send the safe one to prevent crashes!
         })
       });
 
       if (response.ok) {
         const data = await response.json();
         
-        // --- LOG THE DATA TO CONSOLE FOR DEBUGGING ---
-        console.log("Django AI Data:", data);
-
         navigate(`/ScenarioBriefingPage/${data.session_id}`, { 
           state: { 
             briefingData: data.scenario_json, 
-            difficulty: djangoDifficulty 
+            // Send the REAL difficulty to the Router so the Smart Slicer slices the buttons!
+            difficulty: activeLevel 
           } 
         }); 
       } else {

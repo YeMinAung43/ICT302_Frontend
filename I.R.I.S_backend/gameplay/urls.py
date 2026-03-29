@@ -10,5 +10,4 @@ urlpatterns = [
     path('pause/<int:session_id>/', views.pause_session, name = 'pause'),
     path('resume/<int:session_id>/', views.resume_session, name = 'resume'),
     path('abandon/<int:session_id>/', views.abandon_session, name = 'abandon'),
-    path('abandon/<int:session_id>/', views.abandon_session, name='abandon'),
 ]

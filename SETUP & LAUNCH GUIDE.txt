@@ -1,29 +1,36 @@
-SHIELDRESPONSE: SETUP & LAUNCH GUIDE
+# SHIELDRESPONSE: SETUP & LAUNCH GUIDE
 Welcome to the ShieldResponse Simulation. Please follow these steps to get the project running on your machine.
 
-🛠️ PART 1: INSTALL THE CORE TOOLS (Do this only once)
-You need these two programs installed for the simulation to run.
+### 🛠️ PART 1: INSTALL THE CORE TOOLS (Do this only once)
+You need these three programs installed for the simulation and the AI Engine to run.
 
-PYTHON: Download Here "https://www.python.org/downloads/"
+1. **PYTHON:** Download Here (https://www.python.org/downloads/)
+   * ⚠️ **CRITICAL:** When the Python installer starts, you MUST check the box at the very bottom that says "Add Python.exe to PATH" before clicking Install.
 
-⚠️ CRITICAL: When the Python installer starts, you MUST check the box at the very bottom that says "Add Python.exe to PATH" before clicking Install.
+2. **NODE.JS:** Download Here (https://nodejs.org/) 
+   * Choose the "LTS" (Long Term Support) version.
 
-NODE.JS: Download Here "https://nodejs.org/" (Choose the "LTS" version).
+3. **OLLAMA (AI Engine):** Download Here (https://ollama.com/)
+   * This runs the local AI that generates the dynamic cyber scenarios.
 
-📥 PART 2: INSTALL THE GAME (Do this only once)
-Now that your computer has the right tools, we need to install the game's specific files.
+---
 
-Open the main ShieldResponse folder.
+### 📥 PART 2: INSTALL THE GAME & AI (Do this only once)
+Now that your computer has the right tools, we need to install the game's specific files and download the AI brain.
 
-Double-click First_Time_Setup.bat.
+1. **Install Game Files:** * Open the main ShieldResponse folder.
+   * Double-click `First_Time_Setup.bat`.
+   * A black window will open and download all the necessary files. When it says "INSTALLATION COMPLETE!", press any key to close the window.
 
-A black window will open and download all the necessary files. This may take a few minutes.
+2. **Download the AI Model:**
+   * Open a new Terminal or Command Prompt window.
+   * Type this exact command and press Enter: `ollama pull llama3`
+   * *Note: This is downloading a large AI model. It may take 5-10 minutes depending on your internet speed. Wait for it to reach 100% and say "success".*
 
-When it says "INSTALLATION COMPLETE!", press any key to close the window.
+---
 
-🚀 PART 3: PLAY THE GAME (Do this every time)
-Double-click Launch_ShieldResponse.bat.
-
-Two terminal windows will open automatically to run the servers. Do not close them!
-
-Wait about 5 seconds, then hold CTRL and click the http://localhost:5173 link that appears in the Frontend window to play.
+### 🚀 PART 3: PLAY THE GAME (Do this every time)
+1. **Start the AI:** Make sure the **Ollama** application is open and running in the background (you should see its little llama icon in your system tray/taskbar).
+2. **Launch the Servers:** Double-click `Launch_ShieldResponse.bat`.
+   * Two terminal windows will open automatically to run the backend and frontend. **Do not close them!**
+3. **Play:** Wait about 5 seconds, then hold CTRL and click the `http://localhost:5173` link that appears in the Frontend window to begin your investigation.
