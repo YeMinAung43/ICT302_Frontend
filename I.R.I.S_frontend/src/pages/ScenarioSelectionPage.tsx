@@ -85,12 +85,17 @@ const ScenarioSelectionPage = () => {
 
   // --- THE NEW BACKEND-DRIVEN FLOW ---
 const handleStartScenario = async (incidentId: string) => {
+    console.log("THE ID I CLICKED WAS:", incidentId);
     setLoadingCardId(incidentId);
 
-    // 🛡️ THE SAFETY MAP: Force Django to look for the files we KNOW exist!
+    // 🛡️ THE SAFETY MAP (No ID translation needed!)
     let safeDifficulty = 'easy';
-    if (incidentId === 'malware') safeDifficulty = 'medium';
-    if (incidentId === 'data_loss' || incidentId === 'dos') safeDifficulty = 'hard';
+
+    if (incidentId === 'malware') {
+      safeDifficulty = 'medium';
+    } else if (incidentId === 'data_loss' || incidentId === 'denial_of_service') {
+      safeDifficulty = 'hard'; // Force DoS to Hard!
+    }
 
     try {
       const response = await fetch('http://localhost:8000/api/session/start/', {
@@ -98,8 +103,10 @@ const handleStartScenario = async (incidentId: string) => {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          incident_type: incidentId,
-          difficulty: safeDifficulty // Send the safe one to prevent crashes!
+          // 🚨 Send the exact ID React uses ('denial_of_service')
+          incident_type: incidentId, 
+          // 🚨 Send the safe difficulty ('hard')
+          difficulty: safeDifficulty 
         })
       });
 
@@ -109,7 +116,6 @@ const handleStartScenario = async (incidentId: string) => {
         navigate(`/ScenarioBriefingPage/${data.session_id}`, { 
           state: { 
             briefingData: data.scenario_json, 
-            // Send the REAL difficulty to the Router so the Smart Slicer slices the buttons!
             difficulty: activeLevel 
           } 
         }); 
