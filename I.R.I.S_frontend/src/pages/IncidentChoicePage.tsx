@@ -110,28 +110,31 @@ const IncidentChoicePage = () => {
     }
   }, [timeLeft, isSubmitting, currentQuestion]);
 
-// 🚪 EMERGENCY EXIT LOGIC
-  const handleAbortMission = async () => {
-    const confirmAbort = window.confirm("WARNING: Are you sure you want to abort the mission? You will lose all current progress.");
-    if (!confirmAbort) return;
+const handleAbortMission = async () => {
+    if (!window.confirm("Are you sure you want to abort this mission? All progress will be lost.")) return;
 
-    setIsSubmitting(true);
     try {
+      // 1. Grab the token from local storage
       const token = localStorage.getItem('access') || localStorage.getItem('token');
-      await fetch(`http://localhost:8000/api/abandon/${id}/`, {
+
+      const response = await fetch(`http://localhost:8000/api/abandon/${id}/`, {
         method: 'POST',
+        // 🚨 2. ADD THESE TWO MAGICAL LINES:
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
         }
       });
-      
-      // 🚨 Goes back to scenario selection!
-      navigate('/ScenarioSelectionPage'); 
-      
+
+      if (response.ok) {
+        // Successfully abandoned in the database, return to dashboard
+        navigate('/ScenarioSelectionPage');
+      } else {
+        console.error("Failed to abort mission on the server.");
+      }
     } catch (error) {
-      console.error("Failed to abort mission:", error);
-      setIsSubmitting(false);
+      console.error("Error connecting to server to abort:", error);
     }
   };
 
@@ -234,9 +237,6 @@ const IncidentChoicePage = () => {
             <span className="text-lg font-bold tracking-tight">SHIELD<span className="text-[#1337ec]">RESPONSE</span></span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-medium">
-              Session ID: <span className="text-[#1337ec]">#{id}</span>
-            </div>
             <div className="flex items-center gap-2 border-r border-white/10 pr-4">
               <span className="text-sm font-bold text-slate-400">Score:</span>
               <span className="text-sm font-bold text-white">{score.toLocaleString()} XP</span>
