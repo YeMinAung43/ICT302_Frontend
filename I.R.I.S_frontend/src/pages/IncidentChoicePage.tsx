@@ -35,27 +35,46 @@ const IncidentChoicePage = () => {
 
     hasFetched.current = true;
 
-    const fetchQuestions = async () => {
+const fetchQuestions = async () => {
       try {
         const token = localStorage.getItem('access') || localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8000/api/generate/${id}/`, {
+        
+        // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
+        const isResuming = location.state?.isResuming || false;
+        
+        const endpoint = isResuming 
+          ? `http://localhost:8000/api/resume/${id}/` 
+          : `http://localhost:8000/api/generate/${id}/`;
+
+        const fetchOptions: any = {
           method: 'POST',
           credentials: 'include',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': token ? `Bearer ${token}` : '' 
-          },
-          body: JSON.stringify({ questions_per_stage: 3 })
-        });
+          }
+        };
+
+        // Only send the body if we are GENERATING new questions. Resume doesn't need it!
+        if (!isResuming) {
+          fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
+        }
+
+        const response = await fetch(endpoint, fetchOptions);
 
         if (response.ok) {
           const data = await response.json();
+          
+          // 🚨 2. DATA NORMALIZER: 
+          // Generate returns a direct array [...], but Resume returns an object { status: 'in progress', questions: [...] }
+          // This safely grabs the questions no matter which path we took!
+          const questionsArray = Array.isArray(data) ? data : (data.questions || []);
           
           // Grab the difficulty from the backpack! (Default to 'expert' if missing)
           const currentDifficulty = location.state?.difficulty || 'expert';
           
           // 🔀 THE SMART SLICER
-          const formattedData = data.map((q: any) => {
+          const formattedData = questionsArray.map((q: any) => {
             // 1. Separate the correct answer from the wrong answers
             const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
             const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
@@ -83,7 +102,7 @@ const IncidentChoicePage = () => {
           if (formattedData.length > 0) setTimeLeft(formattedData[0].time_limit || 30);
           setIsLoading(false);
         } else {
-          console.error("Failed to generate questions");
+          console.error("Failed to fetch questions from server.");
         }
       } catch (error) {
         console.error("Server error:", error);
@@ -138,6 +157,31 @@ const handleAbortMission = async () => {
     }
   };
 
+        // --- NEW PAUSE FUNCTION ---
+  const handlePauseMission = async () => {
+    try {
+      const token = localStorage.getItem('access') || localStorage.getItem('token');
+
+      const response = await fetch(`http://localhost:8000/api/pause/${id}/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (response.ok) {
+        // Successfully paused, return to dashboard!
+        navigate('/ScenarioSelectionPage'); 
+      } else {
+        console.error("Failed to pause mission on the server.");
+      }
+    } catch (error) {
+      console.error("Error connecting to server to pause:", error);
+    }
+  };
+
   const handleChoice = async (optionId: string) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -173,6 +217,8 @@ const handleAbortMission = async () => {
         setIsSubmitting(false);
         return;
       }
+
+
 
       // 💎 STRICT 10/0 SCORING SYSTEM
       const isAnswerCorrect = result.answer_is_correct === true;
@@ -242,6 +288,13 @@ const handleAbortMission = async () => {
               <span className="text-sm font-bold text-white">{score.toLocaleString()} XP</span>
             </div>
             {/* ABORT MISSION BUTTON */}
+            <button 
+        onClick={handlePauseMission}
+        className="px-4 py-2 bg-amber-500/10 text-amber-500 border border-amber-500/50 rounded-lg text-xs font-bold hover:bg-amber-500 hover:text-white transition-all flex items-center gap-2"
+      >
+        <span className="material-icons text-sm">pause</span>
+        PAUSE MISSION
+      </button>
             <button 
               onClick={handleAbortMission}
               disabled={isSubmitting}

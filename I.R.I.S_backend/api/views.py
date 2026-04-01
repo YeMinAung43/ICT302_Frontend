@@ -51,14 +51,12 @@ def signup(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
-    # OUR FIX: Pointing to React (5173) instead of Django (8000)
-    verify_link = f"http://localhost:5173/verify-email/{uid}/{token}"
+    verify_link = f'http://localhost:8000/api/verify-email/{uid}/{token}/'
 
     send_mail(
         subject = 'Verify your email',
         message = f'Click the link to verify:\n{verify_link}',
-        # OUR FIX: Using your real Gmail so Google doesn't crash
-        from_email='yeminag43@gmail.com',
+        from_email='no-reply@localhost.com',
         recipient_list=[email],
     )
 
@@ -219,14 +217,12 @@ def password_reset_request(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
-    # OUR FIX: Pointing to React (5173) and using {uid} instead of {uidb64}
-    reset_link = f"http://localhost:5173/reset-password/{uid}/{token}"
+    reset_link = f'http://localhost:8000/api/password-reset/{uid}/{token}/'
 
     send_mail(
         subject = 'Password reset',
         message = f'Reset Your Password: {reset_link}',
-        # OUR FIX: Using your real Gmail address
-        from_email = 'yeminag43@gmail.com',
+        from_email = 'no-reply@localhost.com',
         recipient_list = [email],
     )
 

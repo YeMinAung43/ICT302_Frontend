@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // 1. The visual catalog of scenarios
@@ -39,21 +39,82 @@ const ScenarioSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- BROUGHT BACK: State for Active Sessions ---
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
 
   // UI STATE
   const [activeLevel, setActiveLevel] = useState(location.state?.level || 'beginner');
 
-  // FILTER LOGIC
+// FILTER LOGIC
   const filteredScenarios = scenarios.filter((s) => {
+    // Beginner gets the Social Engineering and Encryption threats
     if (activeLevel === 'beginner') return ['phishing', 'ransomware'].includes(s.id);
-    if (activeLevel === 'intermediate') return s.locked === false;
+    
+    // Intermediate gets ONLY the Endpoint Security threat
+    if (activeLevel === 'intermediate') return ['malware'].includes(s.id);
+    
+    // Expert gets the intense Exfiltration and Network Performance threats
+    if (activeLevel === 'expert') return ['data_loss', 'denial_of_service'].includes(s.id);
+    
     return true; 
   });
 
+  // --- BROUGHT BACK: Fetch Active/Paused Sessions ---
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const token = localStorage.getItem('access') || localStorage.getItem('token');
+
+        const response = await fetch('http://localhost:8000/api/sessions/', {
+          method: 'GET',
+          credentials: 'include', 
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setActiveSessions(data);
+        } else {
+          console.error("Failed to fetch sessions, status:", response.status);
+        }
+      } catch (error) {
+        console.error("Failed to load active sessions:", error);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  // --- BROUGHT BACK: Abandon Session Logic ---
+  const handleAbandonSession = async (sessionId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevents the card click from firing
+    
+    if (!window.confirm(`Are you sure you want to delete Operation #${sessionId}?`)) return;
+
+    try {
+      const token = localStorage.getItem('access') || localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/abandon/${sessionId}/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (response.ok) {
+        setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
+      }
+    } catch (err) {
+      console.error("Failed to close session:", err);
+    }
+  };
+
   // --- THE BACKEND-DRIVEN FLOW ---
   const handleStartScenario = async (incidentId: string) => {
-    console.log("THE ID I CLICKED WAS:", incidentId);
     setLoadingCardId(incidentId);
 
     // 🛡️ THE SAFETY MAP (No ID translation needed!)
@@ -66,10 +127,14 @@ const ScenarioSelectionPage = () => {
     }
 
     try {
+      const token = localStorage.getItem('access') || localStorage.getItem('token');
       const response = await fetch('http://localhost:8000/api/session/start/', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '' 
+        },
         body: JSON.stringify({
           incident_type: incidentId, 
           difficulty: safeDifficulty 
@@ -124,6 +189,52 @@ const ScenarioSelectionPage = () => {
 
       <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
         
+        {/* --- BROUGHT BACK: Active Operations Section --- */}
+        {activeSessions.length > 0 && (
+          <div className="mb-12 bg-slate-200/50 dark:bg-[#151726]/80 p-6 rounded-2xl border border-blue-500/20">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <span className="material-icons text-[#1337ec] animate-pulse">radar</span> 
+              Active Operations
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeSessions.map((op) => (
+                <div 
+                  key={op.id} 
+                  className="relative bg-[#151726]/60 border border-white/5 rounded-xl p-4 flex items-center justify-between group transition-all hover:border-blue-500/30"
+                >
+                  
+                  {/* The Close Button */}
+                  <button 
+                    onClick={(e) => handleAbandonSession(op.id, e)}
+                    className="absolute -top-2 -right-2 w-7 h-7 bg-rose-600 hover:bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-30 scale-75 group-hover:scale-100"
+                    title="Remove Operation"
+                  >
+                    <span className="material-icons text-[16px]">close</span>
+                  </button>
+
+                  <div className="flex flex-col gap-1">
+                    <h4 className="text-[11px] font-black text-blue-400 uppercase tracking-widest">
+                      Op #{op.id}: {op.incident_type.replace('_', ' ')}
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      {/* Dynamic status dot: yellow for paused, green for in progress */}
+                      <span className={`w-1.5 h-1.5 rounded-full ${op.status === 'paused' ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`}></span>
+                      <p className="text-[10px] text-slate-400 font-medium capitalize">Status: {op.status}</p>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => navigate(`/play/${op.id}`, { state: { isResuming: true } })}
+                    className="px-5 py-2 bg-blue-600/10 text-blue-400 rounded-lg text-[10px] font-bold uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all border border-blue-500/20"
+                  >
+                    Resume
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Header & Difficulty Switcher */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
           <div>
