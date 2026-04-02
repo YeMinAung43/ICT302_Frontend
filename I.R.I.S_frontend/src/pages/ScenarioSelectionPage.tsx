@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { fetchWithAuth } from '../utils/api'; // ✅ Smart fetch wrapper imported!
 
 // 1. The visual catalog of scenarios
 const scenarios = [
@@ -39,40 +40,28 @@ const ScenarioSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // --- BROUGHT BACK: State for Active Sessions ---
+  // State for Active Sessions
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
 
   // UI STATE
   const [activeLevel, setActiveLevel] = useState(location.state?.level || 'beginner');
 
-// FILTER LOGIC
+  // FILTER LOGIC
   const filteredScenarios = scenarios.filter((s) => {
-    // Beginner gets the Social Engineering and Encryption threats
     if (activeLevel === 'beginner') return ['phishing', 'ransomware'].includes(s.id);
-    
-    // Intermediate gets ONLY the Endpoint Security threat
     if (activeLevel === 'intermediate') return ['malware'].includes(s.id);
-    
-    // Expert gets the intense Exfiltration and Network Performance threats
     if (activeLevel === 'expert') return ['data_loss', 'denial_of_service'].includes(s.id);
-    
     return true; 
   });
 
-  // --- BROUGHT BACK: Fetch Active/Paused Sessions ---
+  // --- Fetch Active/Paused Sessions ---
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const token = localStorage.getItem('access') || localStorage.getItem('token');
-
-        const response = await fetch('http://localhost:8000/api/sessions/', {
-          method: 'GET',
-          credentials: 'include', 
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-          }
+        // ✅ 1. Replaced with fetchWithAuth (No need for token/header setup!)
+        const response = await fetchWithAuth('http://localhost:8000/api/sessions/', {
+          method: 'GET'
         });
         
         if (response.ok) {
@@ -88,21 +77,16 @@ const ScenarioSelectionPage = () => {
     fetchSessions();
   }, []);
 
-  // --- BROUGHT BACK: Abandon Session Logic ---
+  // --- Abandon Session Logic ---
   const handleAbandonSession = async (sessionId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevents the card click from firing
+    e.stopPropagation(); 
     
     if (!window.confirm(`Are you sure you want to delete Operation #${sessionId}?`)) return;
 
     try {
-      const token = localStorage.getItem('access') || localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/abandon/${sessionId}/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        }
+      // ✅ 2. Replaced with fetchWithAuth
+      const response = await fetchWithAuth(`http://localhost:8000/api/abandon/${sessionId}/`, {
+        method: 'POST'
       });
 
       if (response.ok) {
@@ -117,24 +101,14 @@ const ScenarioSelectionPage = () => {
   const handleStartScenario = async (incidentId: string) => {
     setLoadingCardId(incidentId);
 
-    // 🛡️ THE SAFETY MAP (No ID translation needed!)
     let safeDifficulty = 'easy';
-
-    if (incidentId === 'malware') {
-      safeDifficulty = 'medium';
-    } else if (incidentId === 'data_loss' || incidentId === 'denial_of_service') {
-      safeDifficulty = 'hard'; // Force DoS to Hard!
-    }
+    if (incidentId === 'malware') safeDifficulty = 'medium';
+    else if (incidentId === 'data_loss' || incidentId === 'denial_of_service') safeDifficulty = 'hard';
 
     try {
-      const token = localStorage.getItem('access') || localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/session/start/', {
+      // ✅ 3. Replaced with fetchWithAuth (Removed the extra token variable)
+      const response = await fetchWithAuth('http://localhost:8000/api/session/start/', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '' 
-        },
         body: JSON.stringify({
           incident_type: incidentId, 
           difficulty: safeDifficulty 
@@ -143,11 +117,14 @@ const ScenarioSelectionPage = () => {
 
       if (response.ok) {
         const data = await response.json();
+        const selectedScenario = scenarios.find(s => s.id === incidentId);
         
         navigate(`/ScenarioBriefingPage/${data.session_id}`, { 
           state: { 
             briefingData: data.scenario_json, 
-            difficulty: activeLevel 
+            difficulty: activeLevel,
+            customTitle: selectedScenario?.title, 
+            customDesc: selectedScenario?.desc    
           } 
         }); 
       } else {
@@ -163,7 +140,8 @@ const ScenarioSelectionPage = () => {
 
   const handleLogout = async () => {
     try {
-        await fetch('http://localhost:8000/api/logout/', { method: 'POST', credentials: 'include' });
+      // ✅ 4. Replaced with fetchWithAuth
+      await fetchWithAuth('http://localhost:8000/api/logout/', { method: 'POST' });
     } catch (e) { console.error(e) }
     navigate('/');
   };
@@ -189,7 +167,7 @@ const ScenarioSelectionPage = () => {
 
       <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
         
-        {/* --- BROUGHT BACK: Active Operations Section --- */}
+        {/* Active Operations Section */}
         {activeSessions.length > 0 && (
           <div className="mb-12 bg-slate-200/50 dark:bg-[#151726]/80 p-6 rounded-2xl border border-blue-500/20">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -202,8 +180,6 @@ const ScenarioSelectionPage = () => {
                   key={op.id} 
                   className="relative bg-[#151726]/60 border border-white/5 rounded-xl p-4 flex items-center justify-between group transition-all hover:border-blue-500/30"
                 >
-                  
-                  {/* The Close Button */}
                   <button 
                     onClick={(e) => handleAbandonSession(op.id, e)}
                     className="absolute -top-2 -right-2 w-7 h-7 bg-rose-600 hover:bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-30 scale-75 group-hover:scale-100"
@@ -217,7 +193,6 @@ const ScenarioSelectionPage = () => {
                       Op #{op.id}: {op.incident_type.replace('_', ' ')}
                     </h4>
                     <div className="flex items-center gap-2">
-                      {/* Dynamic status dot: yellow for paused, green for in progress */}
                       <span className={`w-1.5 h-1.5 rounded-full ${op.status === 'paused' ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`}></span>
                       <p className="text-[10px] text-slate-400 font-medium capitalize">Status: {op.status}</p>
                     </div>

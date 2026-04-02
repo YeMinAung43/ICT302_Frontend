@@ -116,7 +116,7 @@ def process_answer(session_id, question_uid, selected_option_id):
         if random.random() < 0.4:
             inject_message = generate_ai_inject(session.incident_type, scenario_severity)
 
-        if random.random() < 0.5 and scenario_severity in ['critical', 'high']:
+        if random.random() < 0.3 and scenario_severity in ['critical', 'high']:
             crisis_event = generate_ai_crisis_event(session.incident_type, scenario_severity)
 
         all_questions_complete = False
@@ -135,7 +135,6 @@ def process_answer(session_id, question_uid, selected_option_id):
                 stage_name = stage.stage_name,
                 is_answered = False
             )
-            print(this_stage_questions_left)
 
             # no question left, go to next question and activate the corresponding stage
             if not this_stage_questions_left:
@@ -166,25 +165,53 @@ def process_answer(session_id, question_uid, selected_option_id):
         question.save()
         session.save()
         stage.save()
+        
+        # 🚨 THE FIX: Capture these variables before leaving the DB block
+        current_health = session.health
+        current_score = session.score
+        current_pressure = session.pressure_level
+        current_wrong_count = session.wrong_count
+        current_incident = session.incident_type
 
-        result_json = {
-            'outcome': outcome,
-            'answer_is_correct': question.answer_is_correct,
-            'score_change': score_change,
-            'health_change': health_change,
-            'new_score': session.score,
-            'new_health': session.health,
-            'pressure_level': session.pressure_level,
-            'current_severity': scenario_severity,
-            'wrong_count': session.wrong_count,
-            'all_questions_complete': all_questions_complete,
-            'scenario_failed': scenario_failed,
-        }
+    # =====================================================================
+    # 🚨 OUTSIDE THE TRANSACTION BLOCK: Safe to run slow AI generation now!
+    # Notice we have un-indented everything below this line.
+    # =====================================================================
+    
+    # check scenario severity based on pressure
+    scenario_severity = None
+    for threshold, severity in SEVERITY_CHOICES:
+        if current_pressure >= threshold:
+            scenario_severity = severity
+            break
 
-        if inject_message:
-            result_json['inject_message'] = inject_message
-        if crisis_event:
-            result_json['crisis_event'] = crisis_event
+    # AI-generate injects based on pressure (TAKES TIME)
+    inject_message = None
+    crisis_event = None
 
-        return result_json
+    if random.random() < 0.4:
+        inject_message = generate_ai_inject(current_incident, scenario_severity)
 
+    if random.random() < 0.3 and scenario_severity in ['critical', 'high']:
+        crisis_event = generate_ai_crisis_event(current_incident, scenario_severity)
+
+    result_json = {
+        'outcome': outcome,
+        'answer_is_correct': question.answer_is_correct,
+        'score_change': score_change,
+        'health_change': health_change,
+        'new_score': current_score,
+        'new_health': current_health,
+        'pressure_level': current_pressure,
+        'current_severity': scenario_severity,
+        'wrong_count': current_wrong_count,
+        'all_questions_complete': all_questions_complete,
+        'scenario_failed': scenario_failed,
+    }
+
+    if inject_message:
+        result_json['inject_message'] = inject_message
+    if crisis_event:
+        result_json['crisis_event'] = crisis_event
+
+    return result_json

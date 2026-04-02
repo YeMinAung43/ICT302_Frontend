@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
 
     'rest_framework',
 
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,11 +70,14 @@ WSGI_APPLICATION = 'Project_Iris.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'iris_db',
+        'USER': 'postgres',
+        'PASSWORD': 'admin',  
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -120,8 +125,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = ''   # your gmail here
-EMAIL_HOST_PASSWORD = '' # your app password here
+EMAIL_HOST_USER = 'yeminag43@gmail.com'   # your gmail here
+EMAIL_HOST_PASSWORD = 'wwsj kjwj eypx oaan' # your app password here
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
@@ -131,10 +136,19 @@ REST_FRAMEWORK = {
     )
 }
 
+AUTH_USER_MODEL = 'gameplay.User'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFE_TIME': timedelta(minutes = 30),
-    'REFRESH_TOKEN_LIFE_TIME': timedelta(days = 1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes = 30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days = 1),
 }
 
 AUTH_USER_MODEL = 'gameplay.User'
-

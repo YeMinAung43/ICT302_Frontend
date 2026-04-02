@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { fetchWithAuth } from '../utils/api';
+
+
+
 
 const IncidentChoicePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation(); 
+  
+const [missionTitle, setMissionTitle] = useState("Active Cyber Incident");
 
   // --- BACKEND STATES ---
   const [questions, setQuestions] = useState<any[]>(location.state?.questions || []);
@@ -35,84 +41,83 @@ const IncidentChoicePage = () => {
 
     hasFetched.current = true;
 
-const fetchQuestions = async () => {
-      try {
-        const token = localStorage.getItem('access') || localStorage.getItem('token');
-        
-        // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
-        const isResuming = location.state?.isResuming || false;
-        
-        const endpoint = isResuming 
-          ? `http://localhost:8000/api/resume/${id}/` 
-          : `http://localhost:8000/api/generate/${id}/`;
 
-        const fetchOptions: any = {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '' 
-          }
-        };
+    const fetchQuestions = async () => {
+    try {
+      // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
+      const isResuming = location.state?.isResuming || false;
+      
+      const endpoint = isResuming 
+        ? `http://localhost:8000/api/resume/${id}/` 
+        : `http://localhost:8000/api/generate/${id}/`;
 
-        // Only send the body if we are GENERATING new questions. Resume doesn't need it!
-        if (!isResuming) {
-          fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
-        }
+      const fetchOptions: any = { method: 'POST' };
 
-        const response = await fetch(endpoint, fetchOptions);
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          // 🚨 2. DATA NORMALIZER: 
-          // Generate returns a direct array [...], but Resume returns an object { status: 'in progress', questions: [...] }
-          // This safely grabs the questions no matter which path we took!
-          const questionsArray = Array.isArray(data) ? data : (data.questions || []);
-          
-          // Grab the difficulty from the backpack! (Default to 'expert' if missing)
-          const currentDifficulty = location.state?.difficulty || 'expert';
-          
-          // 🔀 THE SMART SLICER
-          const formattedData = questionsArray.map((q: any) => {
-            // 1. Separate the correct answer from the wrong answers
-            const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
-            const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
-
-            // 2. Shuffle the wrong answers so they are different every time
-            wrongOptions.sort(() => Math.random() - 0.5);
-
-            // 3. Pick how many wrong answers to show based on difficulty
-            let selectedWrong: any[] = [];
-            if (currentDifficulty === 'easy' || currentDifficulty === 'beginner') {
-              selectedWrong = wrongOptions.slice(0, 1); // 1 Correct + 1 Wrong = 2 Buttons
-            } else if (currentDifficulty === 'intermediate') {
-              selectedWrong = wrongOptions.slice(0, 2); // 1 Correct + 2 Wrong = 3 Buttons
-            } else {
-              selectedWrong = wrongOptions; // Expert gets all buttons!
-            }
-
-            // 4. Combine them and do one final shuffle so the correct answer moves around!
-            const finalOptions = [...correctOptions, ...selectedWrong].sort(() => Math.random() - 0.5);
-
-            return { ...q, options: finalOptions };
-          });
-
-          setQuestions(formattedData); 
-          if (formattedData.length > 0) setTimeLeft(formattedData[0].time_limit || 30);
-          setIsLoading(false);
-        } else {
-          console.error("Failed to fetch questions from server.");
-        }
-      } catch (error) {
-        console.error("Server error:", error);
+      // Only send the body if we are GENERATING new questions. Resume doesn't need it!
+      if (!isResuming) {
+        fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
       }
-    };
+
+      // 🚨 2. THE SMART FETCH: Automatically handles tokens and retries!
+      const response = await fetchWithAuth(endpoint, fetchOptions);
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Data Normalizer: Safely grab the questions array whether it came from generate or resume
+        const questionsArray = Array.isArray(data) ? data : (data.questions || []);
+        const currentDifficulty = location.state?.difficulty || 'expert';
+        
+        // 🔀 THE SMART SLICER
+        const formattedData = questionsArray.map((q: any) => {
+          const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
+          const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
+
+          wrongOptions.sort(() => Math.random() - 0.5);
+
+          let selectedWrong: any[] = [];
+          if (currentDifficulty === 'easy' || currentDifficulty === 'beginner') {
+            selectedWrong = wrongOptions.slice(0, 1);
+          } else if (currentDifficulty === 'intermediate') {
+            selectedWrong = wrongOptions.slice(0, 2);
+          } else {
+            selectedWrong = wrongOptions; 
+          }
+
+          const finalOptions = [...correctOptions, ...selectedWrong].sort(() => Math.random() - 0.5);
+          return { ...q, options: finalOptions };
+        });
+
+        setQuestions(formattedData); 
+        if (formattedData.length > 0) setTimeLeft(formattedData[0].time_limit || 30);
+        setIsLoading(false);
+      } else {
+        console.error("Failed to fetch questions from server.");
+      }
+    } catch (error) {
+      console.error("Server error:", error);
+    }
+  };
 
     fetchQuestions();
   }, [id, questions.length]);
 
   const currentQuestion = questions[currentStepIndex];
+
+  useEffect(() => {
+    if (location.state?.customTitle) {
+      // If we just arrived directly from the Briefing Page, save the fresh title!
+      setMissionTitle(location.state.customTitle);
+      sessionStorage.setItem(`missionTitle_${id}`, location.state.customTitle);
+    } else {
+      // If we moved to Question 2, 3, or clicked "Resume", grab the saved title!
+      const savedTitle = sessionStorage.getItem(`missionTitle_${id}`);
+      if (savedTitle) {
+        setMissionTitle(savedTitle);
+      }
+    }
+  }, [location.state, id]);
+
 
   useEffect(() => {
     if (isLoading || timeLeft <= 0 || isSubmitting) return;
@@ -220,7 +225,7 @@ const handleAbortMission = async () => {
 
 
 
-      // 💎 STRICT 10/0 SCORING SYSTEM
+      //  STRICT 10/0 SCORING SYSTEM
       const isAnswerCorrect = result.answer_is_correct === true;
       
       // We ignore Django's 'score_change' and force our own math!
@@ -318,6 +323,13 @@ const handleAbortMission = async () => {
       {/* Main Question */}
       <main className="flex-grow flex flex-col items-center justify-center px-6 max-w-7xl mx-auto w-full py-8 z-10">
         <div className="w-full flex flex-col items-center mb-12">
+
+          {/*Title*/} 
+          <div className="mb-6 text-center">
+          <h2 className="text-lg md:text-3xl font-black text-[#1337ec] tracking-[0.2em] uppercase drop-shadow-[0_0_15px_rgba(19,55,236,0.5)]">
+          {missionTitle}
+          </h2>
+          </div>
           
           {/* STEP COUNTER PILL */}
           <div className="mb-6 px-5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold tracking-widest text-slate-400 uppercase shadow-sm">
@@ -345,9 +357,9 @@ const handleAbortMission = async () => {
             </div>
           </div>
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-center leading-tight max-w-5xl tracking-tight uppercase">
-            {currentQuestion.question_text}
-          </h1>
+          <h1 className="text-xl md:text-3xl font-extrabold text-white text-center uppercase tracking-wide leading-tight max-w-5xl mb-10">
+        {currentQuestion.question_text}
+        </h1>
         </div>
 
         {/* Dynamic Choice Grid */}
@@ -368,7 +380,7 @@ const handleAbortMission = async () => {
                   <span className={`material-icons text-3xl ${style.iconColor}`}>{style.icon}</span>
                 </div>
                 
-                <span className="text-sm md:text-base font-bold text-slate-300 group-hover:text-white uppercase tracking-widest leading-relaxed z-10 transition-colors">
+                <span className="text-base md:text-lg font-bold text-slate-300 group-hover:text-white uppercase tracking-widest leading-relaxed z-10 transition-colors">
                   {option.option_text || option.text || "Unknown Option"}
                 </span>
 

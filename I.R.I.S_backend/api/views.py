@@ -4,6 +4,7 @@ from django.contrib.auth.tokens import default_token_generator, PasswordResetTok
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
+from django.shortcuts import redirect
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -51,7 +52,7 @@ def signup(request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
 
-    verify_link = f'http://localhost:8000/api/verify-email/{uid}/{token}/'
+    verify_link = f'http://localhost:5173/verify-email/{uid}/{token}'
 
     send_mail(
         subject = 'Verify your email',
@@ -62,7 +63,7 @@ def signup(request):
 
     return Response({'message': 'Successfully registered! Check email for verification link.'}, status = status.HTTP_201_CREATED)
 
-@api_view(['POST'])
+@api_view(['POST']) 
 def verify_email(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
@@ -74,7 +75,9 @@ def verify_email(request, uidb64, token):
         user.is_active = True
         user.save()
 
-        return Response({'message': 'Successfully verified! You may now log in.'}, status = status.HTTP_200_OK)
+        
+        return Response({'message': 'Successfully verified!'}, status = status.HTTP_200_OK)
+        
     else:
         return Response({'error': 'Invalid or expired token'}, status = status.HTTP_400_BAD_REQUEST)
 

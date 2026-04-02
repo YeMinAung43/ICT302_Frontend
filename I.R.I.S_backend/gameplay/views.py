@@ -29,6 +29,7 @@ def session_start_view(request):
         return Response({
             'session_id' : session.id,
             'status': session.status,
+            'scenario_json': session.scenario_json
         },
             status = status.HTTP_201_CREATED
         )
@@ -113,9 +114,9 @@ def generate_debrief_view(request, session_id):
             'debrief': session.debrief.debrief_text
         })
 
-    if session.status not in ['completed', 'failed']:
+    if session.status not in ['completed', 'failed', 'abandoned']:
         return Response(
-            {'error': 'Session is still in progress or abandoned'},
+            {'error': 'Session is still in progress'},
             status = status.HTTP_400_BAD_REQUEST
         )
 

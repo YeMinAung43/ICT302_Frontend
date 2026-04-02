@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { fetchWithAuth } from '../utils/api'; 
 
 const DebriefPage = () => {
   const navigate = useNavigate();
@@ -11,11 +12,11 @@ const DebriefPage = () => {
   const maxScore = totalQuestions * 10;
   const accuracy = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
-// --- NEW: AI FEEDBACK STATES ---
+  // --- AI FEEDBACK STATES ---
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   
-  // 🔒 THE LOCK: Stop React's double-fire!
+  // THE LOCK: Stop React's double-fire!
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -25,18 +26,10 @@ const DebriefPage = () => {
 
     const fetchDebrief = async () => {
       try {
-        const token = localStorage.getItem('access') || localStorage.getItem('token');
-        
-        const response = await fetch(`http://localhost:8000/api/debrief/${id}/`, {
-          method: 'POST', 
-          credentials: 'include',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '' 
-          }
+        //  Replaced with fetchWithAuth (No need for token/header setup!)
+        const response = await fetchWithAuth(`http://localhost:8000/api/debrief/${id}/`, {
+          method: 'POST' 
         });
-
-        // ... (the rest of your fetch logic stays exactly the same!) ...
 
         if (response.ok) {
           const data = await response.json();
@@ -98,7 +91,7 @@ const DebriefPage = () => {
           </div>
         </div>
 
-        {/* 🤖 AI INSTRUCTOR REPORT SECTION */}
+        {/*  AI INSTRUCTOR REPORT SECTION */}
         <div className="w-full bg-[#0a0c16] border border-white/10 rounded-2xl p-6 md:p-8 mb-10 relative overflow-hidden">
           {/* Subtle grid background for the report box */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50 z-0" />
