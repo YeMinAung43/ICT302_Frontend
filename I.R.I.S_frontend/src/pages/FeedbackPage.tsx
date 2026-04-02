@@ -8,7 +8,7 @@ const FeedbackPage = () => {
 
   const { feedback, nextStep, questions, score } = location.state || {};
 
-// Safely check for both our custom flags and Django's real data
+  // Safely check for both our custom flags and Django's real data
   const isCorrect = feedback?.is_correct || feedback?.answer_is_correct || false;
   const isTimeout = feedback?.is_timeout || false;
   
@@ -21,8 +21,16 @@ const FeedbackPage = () => {
     : "Critical error. The threat actor successfully bypassed defenses based on your response. Review SOC protocols immediately.";
   if (isTimeout) defaultExplanation = "Time limit exceeded. In active cyber warfare, hesitation results in system compromise. You must act faster.";
 
-  // 🚨 USE DJANGO'S CRISIS EVENT FOR THE TEXT
-  const explanation = feedback?.crisis_event || defaultExplanation;
+  // 🚨 THE FIX IS HERE 🚨
+  // We grab the raw data from Django...
+  let rawCrisisEvent = feedback?.crisis_event;
+  
+  // ...and if it's an object (which caused the crash), we extract just the text!
+  if (typeof rawCrisisEvent === 'object' && rawCrisisEvent !== null) {
+    rawCrisisEvent = rawCrisisEvent.question_text || defaultExplanation;
+  }
+
+  const explanation = rawCrisisEvent || defaultExplanation;
 
   // 🏁 THE END-GAME CHECKER
   const isLastQuestion = nextStep >= (questions?.length || 3);
@@ -74,6 +82,7 @@ const FeedbackPage = () => {
             <span className="material-icons text-slate-400 text-sm">memory</span>
             <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">AI Tactical Feedback</span>
           </div>
+          {/* This <p> tag will never crash again! */}
           <p className="text-slate-300 leading-relaxed text-sm md:text-base">
             {explanation}
           </p>

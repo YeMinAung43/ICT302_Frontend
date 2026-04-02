@@ -31,7 +31,7 @@ const ScenarioBriefingPage = () => {
             <div className="w-10 h-10 bg-[#1337ec] rounded-lg flex items-center justify-center shadow-lg shadow-[#1337ec]/20">
               <span className="material-icons text-white">security</span>
             </div>
-            <span className="text-xl font-bold tracking-tight uppercase">Cyber<span className="text-[#1337ec]">Quest</span></span>
+            <span className="text-xl font-bold tracking-tight uppercase">Cyber<span className="text-[#1337ec]">Fanhouse</span></span>
           </div>
         </div>
       </nav>
@@ -39,7 +39,7 @@ const ScenarioBriefingPage = () => {
       <main className="flex items-center justify-center min-h-[calc(100vh-80px)] px-6 py-12 relative z-10">
         <div className="max-w-4xl w-full">
           
-          {/* ⬅️ THE BACK ARROW */}
+          {/* ⬅ THE BACK ARROW */}
           <div 
             onClick={() => navigate('/ScenarioSelectionPage')} 
             className="mb-8 flex items-center gap-2 text-slate-500 hover:text-[#1337ec] transition-colors cursor-pointer group w-fit"

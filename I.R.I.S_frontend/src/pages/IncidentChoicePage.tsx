@@ -42,62 +42,78 @@ const [missionTitle, setMissionTitle] = useState("Active Cyber Incident");
     hasFetched.current = true;
 
 
-    const fetchQuestions = async () => {
-    try {
-      // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
-      const isResuming = location.state?.isResuming || false;
-      
-      const endpoint = isResuming 
-        ? `http://localhost:8000/api/resume/${id}/` 
-        : `http://localhost:8000/api/generate/${id}/`;
-
-      const fetchOptions: any = { method: 'POST' };
-
-      // Only send the body if we are GENERATING new questions. Resume doesn't need it!
-      if (!isResuming) {
-        fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
-      }
-
-      // 🚨 2. THE SMART FETCH: Automatically handles tokens and retries!
-      const response = await fetchWithAuth(endpoint, fetchOptions);
-
-      if (response.ok) {
-        const data = await response.json();
+const fetchQuestions = async () => {
+      try {
+        // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
+        const isResuming = location.state?.isResuming || false;
         
-        // Data Normalizer: Safely grab the questions array whether it came from generate or resume
-        const questionsArray = Array.isArray(data) ? data : (data.questions || []);
-        const currentDifficulty = location.state?.difficulty || 'expert';
-        
-        // 🔀 THE SMART SLICER
-        const formattedData = questionsArray.map((q: any) => {
-          const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
-          const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
+        const endpoint = isResuming 
+          ? `http://localhost:8000/api/resume/${id}/` 
+          : `http://localhost:8000/api/generate/${id}/`;
 
-          wrongOptions.sort(() => Math.random() - 0.5);
+        const fetchOptions: any = { method: 'POST' };
 
-          let selectedWrong: any[] = [];
-          if (currentDifficulty === 'easy' || currentDifficulty === 'beginner') {
-            selectedWrong = wrongOptions.slice(0, 1);
-          } else if (currentDifficulty === 'intermediate') {
-            selectedWrong = wrongOptions.slice(0, 2);
+        // Only send the body if we are GENERATING new questions. Resume doesn't need it!
+        if (!isResuming) {
+          fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
+        }
+
+        // 🚨 2. THE SMART FETCH: Automatically handles tokens and retries!
+        const response = await fetchWithAuth(endpoint, fetchOptions);
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          let questionsArray = [];
+          
+          if (isResuming) {
+            // 🚨 We don't have to hack the array anymore! Django sends the full list.
+            questionsArray = data.questions || [];
+            
+            // Sync your saved score from the database
+            if (data.score !== undefined) setScore(data.score);
+            
+            // 🚨 Fast-forward the game to the correct question! (e.g. index 5 = question 6)
+            if (data.current_index !== undefined) {
+              setCurrentStepIndex(data.current_index);
+            }
           } else {
-            selectedWrong = wrongOptions; 
+            // Normal generation flow
+            questionsArray = Array.isArray(data) ? data : (data.questions || []);
           }
 
-          const finalOptions = [...correctOptions, ...selectedWrong].sort(() => Math.random() - 0.5);
-          return { ...q, options: finalOptions };
-        });
+          const currentDifficulty = location.state?.difficulty || 'expert';
+          
+          // 🔀 THE SMART SLICER
+          const formattedData = questionsArray.map((q: any) => {
+            const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
+            const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
 
-        setQuestions(formattedData); 
-        if (formattedData.length > 0) setTimeLeft(formattedData[0].time_limit || 30);
-        setIsLoading(false);
-      } else {
-        console.error("Failed to fetch questions from server.");
+            wrongOptions.sort(() => Math.random() - 0.5);
+
+            let selectedWrong: any[] = [];
+            if (currentDifficulty === 'easy' || currentDifficulty === 'beginner') {
+              selectedWrong = wrongOptions.slice(0, 1);
+            } else if (currentDifficulty === 'intermediate') {
+              selectedWrong = wrongOptions.slice(0, 2);
+            } else {
+              selectedWrong = wrongOptions; 
+            }
+
+            const finalOptions = [...correctOptions, ...selectedWrong].sort(() => Math.random() - 0.5);
+            return { ...q, options: finalOptions };
+          });
+
+          setQuestions(formattedData); 
+          if (formattedData.length > 0) setTimeLeft(formattedData[0].time_limit || 30);
+          setIsLoading(false);
+        } else {
+          console.error("Failed to fetch questions from server.");
+        }
+      } catch (error) {
+        console.error("Server error:", error);
       }
-    } catch (error) {
-      console.error("Server error:", error);
-    }
-  };
+    };
 
     fetchQuestions();
   }, [id, questions.length]);
@@ -187,7 +203,7 @@ const handleAbortMission = async () => {
     }
   };
 
-  const handleChoice = async (optionId: string) => {
+const handleChoice = async (optionId: string) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -195,11 +211,12 @@ const handleAbortMission = async () => {
       const token = localStorage.getItem('access') || localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/api/answer/${id}/`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
         },
+        credentials: 'include', 
+        
         body: JSON.stringify({
           question_uid: currentQuestion.question_uid,
           selected_option_id: optionId
@@ -285,7 +302,7 @@ const handleAbortMission = async () => {
             <div className="w-8 h-8 bg-[#1337ec] rounded-lg flex items-center justify-center shadow-lg shadow-[#1337ec]/20">
               <span className="material-icons text-white text-sm">security</span>
             </div>
-            <span className="text-lg font-bold tracking-tight">SHIELD<span className="text-[#1337ec]">RESPONSE</span></span>
+            <span className="text-lg font-bold tracking-tight">CYBER<span className="text-[#1337ec]">FANHOUSE</span></span>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 border-r border-white/10 pr-4">
@@ -312,7 +329,7 @@ const handleAbortMission = async () => {
         </div>
       </nav>
 
-      {/* 📊 PROGRESS BAR */}
+      {/*  PROGRESS BAR */}
       <div className="w-full bg-white/5 h-1.5 relative z-20 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
         <div 
           className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1337ec] to-cyan-400 transition-all duration-700 ease-out"

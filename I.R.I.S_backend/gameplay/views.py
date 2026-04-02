@@ -189,10 +189,31 @@ def resume_session(request, session_id):
     session.status = 'in progress'
     session.save()
 
+    # 🚨 THE FIX: Get the full list of questions for this session so React knows the total length
+    questions = QuestionRun.objects.filter(session_id = session_id).order_by('id')
+    questions_list = []
+    current_index = 0
+
+    for idx, question in enumerate(questions):
+        questions_list.append({
+            'id' : question.id,
+            'question_uid' : question.question_uid,
+            'question_text' : question.question_text,
+            'options' : question.options_json,
+            'time_limit' : question.time_limit_seconds,
+        })
+        
+        # Figure out which step index we are on based on the saved state!
+        state_q_id = str(session_state.get('question_id'))
+        if str(question.id) == state_q_id or str(question.question_uid) == state_q_id:
+            current_index = idx
+
     return Response({
         'message': 'Session resumed',
         'session_id': session.id,
         'status': session.status,
+        'questions': questions_list,    # Send the full array!
+        'current_index': current_index, # Tell React to jump to question 6
         **session_state
     })
 

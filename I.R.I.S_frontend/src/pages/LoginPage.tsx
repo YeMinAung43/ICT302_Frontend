@@ -94,18 +94,13 @@ const LoginPage = () => {
                   className="form-input flex w-full rounded-xl border border-slate-200 dark:border-[#3b3f54] bg-slate-50 dark:bg-[#101322] text-slate-900 dark:text-white h-14 pl-12 pr-4 outline-none focus:border-blue-500 transition-colors"
                   placeholder="username" 
                   required
-
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-slate-600 dark:text-slate-300 text-sm font-medium">Password</label>
-                <Link to="/ForgotPasswordPage-username" className="text-sm text-[#1337ec] hover:underline">
-                  Forgot Password?
-                </Link>
-              </div>
+              {/* 🚨 Cleaned up the label area here */}
+              <label className="text-slate-600 dark:text-slate-300 text-sm font-medium ml-1">Password</label>
               <div className="form-input-container relative flex items-center group">
                 <span className="input-icon material-symbols-outlined absolute left-4 text-slate-400 dark:text-[#9da1b9] transition-colors">lock</span>
                 <input
@@ -119,22 +114,31 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* 4. Dynamic Submit Button */}
-            <button
-              disabled={isLoading}
-              className={`w-full rounded-xl bg-blue-600 h-14 text-white text-base font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2
-                ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700 active:scale-[0.98]'}`}
-              type="submit"
-            >
-              {isLoading ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Authenticating...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </button>
+            {/* 4. Dynamic Submit Button & Forgot Password Link */}
+            <div className="flex flex-col gap-4 pt-2">
+              <button
+                disabled={isLoading}
+                className={`w-full rounded-xl bg-blue-600 h-14 text-white text-base font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2
+                  ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700 active:scale-[0.98]'}`}
+                type="submit"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                    Authenticating...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+
+              {/* 🚨 MOVED HERE: Centered directly beneath the button */}
+              <div className="text-center">
+                <Link to="/ForgotPasswordPage-username" className="text-sm font-medium text-[#1337ec] hover:underline transition-all">
+                  Forgot Password?
+                </Link>
+              </div>
+            </div>
           </form>
 
           <div className="mt-8 text-center">

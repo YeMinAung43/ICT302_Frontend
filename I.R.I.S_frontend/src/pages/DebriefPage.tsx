@@ -77,7 +77,6 @@ const DebriefPage = () => {
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase mb-2 text-white text-center">
           Simulation Complete
         </h1>
-        <p className="text-slate-400 tracking-widest uppercase text-xs mb-10">Session ID: #{id}</p>
 
         {/* STATS GRID */}
         <div className="grid grid-cols-2 gap-4 md:gap-6 w-full mb-10">

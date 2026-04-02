@@ -22,7 +22,7 @@ const DifficultySelectionPage = () => {
               <span className="material-symbols-outlined text-3xl">shield_lock</span>
             </div>
             <h2 className="text-xl font-bold leading-tight tracking-tight uppercase italic">
-              Cyber Response
+              Cyber Funhouse
             </h2>
           </div>
           <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 hover:bg-[#1337ec]/20 transition-colors">
