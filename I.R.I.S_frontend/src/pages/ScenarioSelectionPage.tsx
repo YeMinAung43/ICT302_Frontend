@@ -30,8 +30,8 @@ const ScenarioSelectionPage = () => {
 
 
   // 🚨 NEW LEADERBOARD STATES
-const [leaderboard, setLeaderboard] = useState([]);
-const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
 
   // FILTER LOGIC
   const filteredScenarios = scenarios.filter((s) => {
@@ -44,37 +44,42 @@ const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
   useEffect(() => { setCurrentIndex(0); }, [activeLevel]);
 
   // --- FETCH DATA (Sessions & Leaderboard) ---
-useEffect(() => {
-  const fetchLeaderboard = async () => {
-    try {
-      // Start the loading spinner
-      setIsLeaderboardLoading(true);
-
-      // Hit your Django backend endpoint using your auth wrapper
-      const response = await fetchWithAuth('http://localhost:8000/api/gameplay/leaderboard/', { 
-        method: 'GET' 
-      });
-
-      if (response.ok) {
-        // Translate the Django JSON response into JavaScript
-        const data = await response.json();
-        
-        // Dump the data into the state bucket! 
-        // (This instantly updates your UI)
-        setLeaderboard(data);
-      } else {
-        console.error("Failed to fetch leaderboard data");
+  useEffect(() => {
+    
+    // 1. Fetch Leaderboard Data
+    const fetchLeaderboard = async () => {
+      try {
+        setIsLeaderboardLoading(true);
+        const response = await fetchWithAuth('http://localhost:8000/api/gameplay/leaderboard/', { method: 'GET' });
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboard(data);
+        }
+      } catch (error) {
+        console.error("Server connection failed:", error);
+      } finally {
+        setIsLeaderboardLoading(false);
       }
-    } catch (error) {
-      console.error("Server connection failed:", error);
-    } finally {
-      // Turn off the loading spinner whether it succeeded or failed
-      setIsLeaderboardLoading(false);
-    }
-  };
+    };
 
-  fetchLeaderboard();
-}, []);
+    // 🚨 2. THE MISSING PIECE: Fetch Active/Paused Sessions!
+    const fetchSessions = async () => {
+      try {
+        const response = await fetchWithAuth('http://localhost:8000/api/sessions/', { method: 'GET' });
+        if (response.ok) {
+          const data = await response.json();
+          setActiveSessions(data); // Fill the bucket!
+        }
+      } catch (error) {
+        console.error("Failed to load active sessions:", error);
+      }
+    };
+
+    // Run both fetches when the page loads
+    fetchLeaderboard();
+    fetchSessions();
+    
+  }, []);
 
   // --- ACTIONS ---
   const handleAbandonSession = async (sessionId: number, e: React.MouseEvent) => {

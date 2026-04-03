@@ -11,6 +11,7 @@ const FeedbackPage = () => {
   // Safely check for both our custom flags and Django's real data
   const isCorrect = feedback?.is_correct || feedback?.answer_is_correct || false;
   const isTimeout = feedback?.is_timeout || false;
+  const pointsEarned = feedback?.points_earned || feedback?.score_change || 0;
   
   // 💎 FIXED: Only use our strict XP from the backpack, ignore Django's score_change
   const xpEarned = feedback?.xp_earned || 0;
@@ -58,7 +59,7 @@ const FeedbackPage = () => {
   const borderColor = isCorrect ? 'border-emerald-500/20' : 'border-rose-500/20';
   const glowColor = isCorrect ? 'shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'shadow-[0_0_30px_rgba(244,63,94,0.1)]';
   
-  let headerText = isCorrect ? "THREAT MITIGATED" : "BREACH DETECTED";
+  let headerText = isCorrect ? "Correct Action" : "Incorrect Action";
   if (isTimeout) headerText = "RESPONSE TIMEOUT";
 
   let icon = isCorrect ? "check_circle" : "warning";
@@ -90,7 +91,7 @@ const FeedbackPage = () => {
 
         <div className="flex items-center gap-3 mb-10">
           <span className={`material-icons ${themeColor}`}>trending_up</span>
-          <span className={`text-2xl font-bold tracking-widest ${themeColor}`}>+{xpEarned} XP</span>
+          <span className={`text-2xl font-bold tracking-widest ${themeColor}`}>{Number(pointsEarned).toFixed(2)} SCORE</span>
         </div>
 
         <button 

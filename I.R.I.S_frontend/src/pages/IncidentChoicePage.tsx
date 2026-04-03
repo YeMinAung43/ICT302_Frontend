@@ -2,15 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { fetchWithAuth } from '../utils/api';
 
-
-
-
 const IncidentChoicePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation(); 
   
-const [missionTitle, setMissionTitle] = useState("Active Cyber Incident");
+  const [missionTitle, setMissionTitle] = useState("Active Cyber Incident");
 
   // --- BACKEND STATES ---
   const [questions, setQuestions] = useState<any[]>(location.state?.questions || []);
@@ -41,10 +38,8 @@ const [missionTitle, setMissionTitle] = useState("Active Cyber Incident");
 
     hasFetched.current = true;
 
-
-const fetchQuestions = async () => {
+    const fetchQuestions = async () => {
       try {
-        // 🚨 1. THE FORK IN THE ROAD: Check if we are resuming!
         const isResuming = location.state?.isResuming || false;
         
         const endpoint = isResuming 
@@ -53,12 +48,10 @@ const fetchQuestions = async () => {
 
         const fetchOptions: any = { method: 'POST' };
 
-        // Only send the body if we are GENERATING new questions. Resume doesn't need it!
         if (!isResuming) {
           fetchOptions.body = JSON.stringify({ questions_per_stage: 3 });
         }
 
-        // 🚨 2. THE SMART FETCH: Automatically handles tokens and retries!
         const response = await fetchWithAuth(endpoint, fetchOptions);
 
         if (response.ok) {
@@ -67,24 +60,19 @@ const fetchQuestions = async () => {
           let questionsArray = [];
           
           if (isResuming) {
-            // 🚨 We don't have to hack the array anymore! Django sends the full list.
             questionsArray = data.questions || [];
             
-            // Sync your saved score from the database
             if (data.score !== undefined) setScore(data.score);
             
-            // 🚨 Fast-forward the game to the correct question! (e.g. index 5 = question 6)
             if (data.current_index !== undefined) {
               setCurrentStepIndex(data.current_index);
             }
           } else {
-            // Normal generation flow
             questionsArray = Array.isArray(data) ? data : (data.questions || []);
           }
 
           const currentDifficulty = location.state?.difficulty || 'expert';
           
-          // 🔀 THE SMART SLICER
           const formattedData = questionsArray.map((q: any) => {
             const correctOptions = q.options.filter((o: any) => o.outcome === 'good');
             const wrongOptions = q.options.filter((o: any) => o.outcome !== 'good');
@@ -122,18 +110,15 @@ const fetchQuestions = async () => {
 
   useEffect(() => {
     if (location.state?.customTitle) {
-      // If we just arrived directly from the Briefing Page, save the fresh title!
       setMissionTitle(location.state.customTitle);
       sessionStorage.setItem(`missionTitle_${id}`, location.state.customTitle);
     } else {
-      // If we moved to Question 2, 3, or clicked "Resume", grab the saved title!
       const savedTitle = sessionStorage.getItem(`missionTitle_${id}`);
       if (savedTitle) {
         setMissionTitle(savedTitle);
       }
     }
   }, [location.state, id]);
-
 
   useEffect(() => {
     if (isLoading || timeLeft <= 0 || isSubmitting) return;
@@ -150,16 +135,14 @@ const fetchQuestions = async () => {
     }
   }, [timeLeft, isSubmitting, currentQuestion]);
 
-const handleAbortMission = async () => {
-    if (!window.confirm("Are you sure you want to abort this mission? All progress will be lost.")) return;
+  const handleAbortMission = async () => {
+    if (!window.confirm("Are you sure you want to abort this mission? The threat will remain active on the network.")) return;
 
     try {
-      // 1. Grab the token from local storage
       const token = localStorage.getItem('access') || localStorage.getItem('token');
 
       const response = await fetch(`http://localhost:8000/api/abandon/${id}/`, {
         method: 'POST',
-        // 🚨 2. ADD THESE TWO MAGICAL LINES:
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -168,8 +151,14 @@ const handleAbortMission = async () => {
       });
 
       if (response.ok) {
-        // Successfully abandoned in the database, return to dashboard
-        navigate('/ScenarioSelectionPage');
+        navigate(`/debrief/${id}`, {
+          state: {
+            score: score || 0,
+            totalQuestions: questions.length,
+            answeredQuestions: currentStepIndex,
+            isAbandoned: true 
+          }
+        });
       } else {
         console.error("Failed to abort mission on the server.");
       }
@@ -178,7 +167,6 @@ const handleAbortMission = async () => {
     }
   };
 
-        // --- NEW PAUSE FUNCTION ---
   const handlePauseMission = async () => {
     try {
       const token = localStorage.getItem('access') || localStorage.getItem('token');
@@ -193,7 +181,6 @@ const handleAbortMission = async () => {
       });
 
       if (response.ok) {
-        // Successfully paused, return to dashboard!
         navigate('/ScenarioSelectionPage'); 
       } else {
         console.error("Failed to pause mission on the server.");
@@ -203,7 +190,7 @@ const handleAbortMission = async () => {
     }
   };
 
-const handleChoice = async (optionId: string) => {
+  const handleChoice = async (optionId: string) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -228,10 +215,12 @@ const handleChoice = async (optionId: string) => {
       if (response.ok) {
         result = await response.json();
       } else if (optionId === "TIMEOUT") {
+        // 🚨 ADDED: Pass the current score through so Django doesn't override it on timeout
         result = { 
           answer_is_correct: false, 
           crisis_event: "Time ran out! In a real cyber incident, hesitating can cost you the network.",
           score_change: 0,
+          score: score, 
           health_change: -10
         };
       } else {
@@ -240,19 +229,17 @@ const handleChoice = async (optionId: string) => {
         return;
       }
 
-
-
-      //  STRICT 10/0 SCORING SYSTEM
+      // 🚨 UPDATED: STRICT DJANGO SCORE SYNC
       const isAnswerCorrect = result.answer_is_correct === true;
+      const pointsEarned = result.score_change || 0; 
       
-      // We ignore Django's 'score_change' and force our own math!
-      const xpEarned = isAnswerCorrect ? 10 : 0; 
-      const newScore = score + xpEarned;
+      // If Django gives us the exact new score, use it. Otherwise do the math.
+      const newScore = result.score !== undefined ? result.score : score + pointsEarned;
 
       const finalFeedback = {
         ...result, 
         is_correct: isAnswerCorrect,
-        xp_earned: xpEarned, // Pack our clean XP into the backpack
+        points_earned: pointsEarned, // Send real points instead of strict 10 XP
         is_timeout: optionId === "TIMEOUT"
       };
 
@@ -307,7 +294,8 @@ const handleChoice = async (optionId: string) => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 border-r border-white/10 pr-4">
               <span className="text-sm font-bold text-slate-400">Score:</span>
-              <span className="text-sm font-bold text-white">{score.toLocaleString()} XP</span>
+              {/* 🚨 REMOVED 'XP' FROM HERE */}
+              <span className="text-sm font-bold text-white">{Number(score).toFixed(2)}</span>
             </div>
             {/* ABORT MISSION BUTTON */}
             <button 
@@ -329,7 +317,7 @@ const handleChoice = async (optionId: string) => {
         </div>
       </nav>
 
-      {/*  PROGRESS BAR */}
+      {/* PROGRESS BAR */}
       <div className="w-full bg-white/5 h-1.5 relative z-20 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
         <div 
           className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1337ec] to-cyan-400 transition-all duration-700 ease-out"

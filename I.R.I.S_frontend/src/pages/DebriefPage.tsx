@@ -60,6 +60,7 @@ const DebriefPage = () => {
       return <p key={index} className="mb-2 text-slate-300">{line}</p>;
     });
   };
+  const themeText = "text-[#1337ec]";
 
   return (
     <div className="min-h-screen bg-[#0a0c16] text-white flex flex-col items-center py-12 px-6 font-['Space_Grotesk'] relative overflow-x-hidden">
@@ -81,8 +82,8 @@ const DebriefPage = () => {
         {/* STATS GRID */}
         <div className="grid grid-cols-2 gap-4 md:gap-6 w-full mb-10">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center transition-transform hover:scale-105">
-            <span className="text-slate-400 text-xs font-bold tracking-widest uppercase mb-2">Total XP Earned</span>
-            <span className="text-4xl font-bold text-[#1337ec]">{score}</span>
+            <span className="text-slate-400 text-xs font-bold tracking-widest uppercase mb-2">Total Score</span>
+            <span className={`text-4xl font-bold ${themeText}`}>{Number(score).toFixed(2)}</span>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center transition-transform hover:scale-105">
             <span className="text-slate-400 text-xs font-bold tracking-widest uppercase mb-2">Accuracy Rate</span>
